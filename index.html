@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synchro-Board - Suivi Collaborateur</title>
+    <style>
+        :root {
+            --bg-color: #f4f7fa;
+            --main-bg: #ffffff;
+            --sidebar-bg: #2c3e50;
+            --sidebar-text: #ecf0f1;
+            --header-color: #3498db;
+            --border-color: #e0e0e0;
+            --shadow: 0 4px 6px rgba(0,0,0,0.05);
+            --text-dark: #34495e;
+            --text-light: #7f8c8d;
+            --status-todo: #3498db;
+            --status-inprogress: #f1c40f;
+            --status-done: #2ecc71;
+            --status-blocked: #e74c3c;
+        }
+
+        /* --- Structure Générale --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+        }
+
+        #sidebar {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        #main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* --- Barre Latérale (Sidebar) --- */
+        #sidebar h1 {
+            font-size: 1.6em;
+            margin: 0 0 20px 0;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        #collaborator-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        #collaborator-list li {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            border-left: 4px solid transparent;
+        }
+
+        #collaborator-list li:hover {
+            background-color: #34495e;
+        }
+
+        #collaborator-list li.active {
+            background-color: var(--header-color);
+            font-weight: 600;
+            border-left: 4px solid var(--sidebar-text);
+            transform: scale(1.02);
+        }
+
+        #add-collaborator-btn {
+            background-color: var(--header-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        #add-collaborator-btn:hover {
+            background-color: #2980b9;
+        }
+
+        /* --- Contenu Principal --- */
+        #header {
+            padding: 15px 30px;
+            background-color: var(--main-bg);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            z-index: 10;
+        }
+
+        #header h2 { margin: 0; font-size: 1.8em; }
+        
+        #view-switcher {
+            padding: 20px 30px 0 30px;
+            background-color: var(--bg-color);
+        }
+
+        .tabs { display: flex; gap: 10px; border-bottom: 1px solid var(--border-color); }
+        .tab { padding: 10px 20px; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 500; color: var(--text-light); }
+        .tab.active { color: var(--header-color); border-bottom: 3px solid var(--header-color); }
+        
+        .view { display: none; padding: 20px 30px; }
+        .view.active { display: block; }
+
+        /* --- Vue Missions (Dashboard) --- */
+        #missions-view { display: flex; flex-direction: column; gap: 25px; }
+        .mission-card {
+            background-color: var(--main-bg);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        .mission-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
+        .mission-header h3 { margin: 0; font-size: 1.4em; }
+        .mission-header-actions button { background: none; border: none; font-size: 1.2em; cursor: pointer; color: var(--text-light); }
+        .mission-header-actions button:hover { color: var(--text-dark); }
+        
+        .mission-content { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .task-column h4 { margin: 0 0 10px 0; }
+        .task-list { list-style: none; padding: 0; margin: 0; min-height: 50px; }
+        .task {
+            background-color: #fdfdfd; border: 1px solid var(--border-color); padding: 12px; margin-bottom: 10px; border-radius: 6px;
+            display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .task.status-todo { border-left: 5px solid var(--status-todo); }
+        .task.status-inprogress { border-left: 5px solid var(--status-inprogress); }
+        .task.status-done { border-left: 5px solid var(--status-done); }
+        .task.status-blocked { border-left: 5px solid var(--status-blocked); }
+        .task-controls { display: flex; align-items: center; gap: 10px; }
+        .task-status { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); background-color: #fff; }
+        .delete-task-btn { background: none; border: none; cursor: pointer; color: #999; font-size: 1.5em; line-height: 1; }
+        .delete-task-btn:hover { color: var(--status-blocked); }
+        
+        .add-task-form { display: flex; gap: 10px; margin-top: 15px; }
+        .new-task-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; }
+        .add-task-btn { padding: 10px 15px; border: none; background-color: var(--status-todo); color: white; border-radius: 5px; cursor: pointer; font-weight: 500; }
+        
+        #add-mission-section { text-align: center; padding: 20px; }
+        #add-mission-btn {
+            background-color: var(--status-done); color: white; border: none; padding: 12px 25px; border-radius: 6px;
+            cursor: pointer; font-size: 1.1em; font-weight: 500;
+        }
+
+        /* --- Vue Comptes-Rendus (CR) --- */
+        #cr-view { display: flex; gap: 30px; }
+        #cr-list-container { width: 300px; flex-shrink: 0; }
+        #cr-list-container h3 { margin-top: 0; }
+        #cr-list { list-style: none; padding: 0; margin: 0; }
+        #cr-list li { padding: 10px; margin-bottom: 5px; border-radius: 5px; cursor: pointer; border: 1px solid var(--border-color); }
+        #cr-list li.active { background-color: var(--header-color); color: white; border-color: var(--header-color); }
+        #add-cr-btn { width: 100%; margin-top: 10px; padding: 10px; background-color: var(--status-done); color: white; border: none; border-radius: 5px; cursor: pointer; }
+        
+        #cr-detail-container { flex-grow: 1; background-color: var(--main-bg); padding: 20px; border-radius: 8px; box-shadow: var(--shadow); }
+        .cr-field { margin-bottom: 15px; }
+        .cr-field label { display: block; font-weight: 600; margin-bottom: 5px; }
+        .cr-field input, .cr-field textarea { width: 98%; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; }
+        .cr-field textarea { min-height: 120px; resize: vertical; }
+        #decision-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        #decision-table th, #decision-table td { border: 1px solid var(--border-color); padding: 8px; text-align: left; }
+        #decision-table th { background-color: #f8f9fa; }
+        #decision-table input { width: 95%; border: none; }
+        .delete-row-btn { cursor: pointer; color: var(--status-blocked); }
+        
+        /* --- État Vide --- */
+        .empty-state { text-align: center; padding: 50px; color: var(--text-light); }
+    </style>
+</head>
+<body>
+
+    <aside id="sidebar">
+        <h1>Synchro-Board</h1>
+        <ul id="collaborator-list"></ul>
+        <button id="add-collaborator-btn">+ Nouveau Collaborateur</button>
+    </aside>
+
+    <main id="main-content">
+        <header id="header">
+            <h2 id="collaborator-title"></h2>
+        </header>
+
+        <div id="view-switcher">
+            <div class="tabs">
+                <div class="tab active" data-view="missions-view">Missions & Tâches</div>
+                <div class="tab" data-view="cr-view">CR & Décisions</div>
+            </div>
+        </div>
+
+        <div id="main-view-container">
+            <!-- Vue Missions -->
+            <div id="missions-view" class="view active">
+                <!-- Les cartes de mission seront injectées ici -->
+                 <div id="add-mission-section">
+                    <button id="add-mission-btn">+ Ajouter une Mission</button>
+                </div>
+            </div>
+
+            <!-- Vue Comptes-Rendus -->
+            <div id="cr-view" class="view">
+                <div id="cr-list-container">
+                    <h3>Historique</h3>
+                    <ul id="cr-list"></ul>
+                    <button id="add-cr-btn">+ Nouveau CR</button>
+                </div>
+                <div id="cr-detail-container"></div>
+            </div>
+            
+            <!-- État vide -->
+            <div id="empty-state-view" class="view">
+                <div class="empty-state">
+                    <h2>Bienvenue sur Synchro-Board</h2>
+                    <p>Sélectionnez un collaborateur ou ajoutez-en un nouveau pour commencer.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM Elements ---
+    const collaboratorListEl = document.getElementById('collaborator-list');
+    const addCollaboratorBtn = document.getElementById('add-collaborator-btn');
+    const collaboratorTitleEl = document.getElementById('collaborator-title');
+    const tabs = document.querySelectorAll('.tab');
+    const views = document.querySelectorAll('.view');
+    const mainViewContainer = document.getElementById('main-view-container');
+    const missionsViewEl = document.getElementById('missions-view');
+    
+    // --- State Management ---
+    let state = {};
+
+    function saveState() {
+        localStorage.setItem('synchroBoardCollaboratorState', JSON.stringify(state));
+    }
+
+    function loadState() {
+        const savedState = localStorage.getItem('synchroBoardCollaboratorState');
+        if (savedState) {
+            state = JSON.parse(savedState);
+        } else {
+            const initialCollabId = `collab-${Date.now()}`;
+            const initialMissionId = `mission-${Date.now()}`;
+            state = {
+                collaborators: {
+                    [initialCollabId]: {
+                        id: initialCollabId,
+                        name: "Marie Dubois",
+                        missions: [
+                            { 
+                                id: initialMissionId, 
+                                title: "Finaliser la présentation client",
+                                tasks: [
+                                    {id: `task-${Date.now()+1}`, text: "Rédiger la partie 1", status: "Terminé"},
+                                    {id: `task-${Date.now()+2}`, text: "Créer les graphiques", status: "En cours"},
+                                    {id: `task-${Date.now()+3}`, text: "Relire et corriger", status: "À faire"},
+                                ]
+                            }
+                        ],
+                        crs: []
+                    }
+                },
+                activeCollaboratorId: initialCollabId,
+                activeView: 'missions-view',
+                activeCrId: null
+            };
+        }
+    }
+
+    // --- Render Functions ---
+    function render() {
+        saveState();
+        renderCollaborators();
+        renderActiveView();
+    }
+
+    function renderCollaborators() {
+        collaboratorListEl.innerHTML = '';
+        if (Object.keys(state.collaborators).length === 0) {
+            showView('empty-state-view');
+            return;
+        }
+
+        for (const collabId in state.collaborators) {
+            const collaborator = state.collaborators[collabId];
+            const li = document.createElement('li');
+            li.textContent = collaborator.name;
+            li.dataset.collaboratorId = collaborator.id;
+            if (collaborator.id === state.activeCollaboratorId) {
+                li.classList.add('active');
+            }
+            li.addEventListener('click', () => {
+                state.activeCollaboratorId = collaborator.id;
+                state.activeCrId = null;
+                render();
+            });
+            collaboratorListEl.appendChild(li);
+        }
+    }
+
+    function renderActiveView() {
+        if (!state.activeCollaboratorId || !state.collaborators[state.activeCollaboratorId]) {
+            showView('empty-state-view');
+            collaboratorTitleEl.textContent = '';
+            return;
+        }
+        
+        const activeCollaborator = state.collaborators[state.activeCollaboratorId];
+        collaboratorTitleEl.textContent = `Suivi de : ${activeCollaborator.name}`;
+        
+        showView(state.activeView);
+
+        if (state.activeView === 'missions-view') {
+            renderMissions();
+        } else if (state.activeView === 'cr-view') {
+            renderCRs();
+        }
+    }
+
+    function renderMissions() {
+        const activeCollaborator = state.collaborators[state.activeCollaboratorId];
+        // Clear previous missions but keep the "Add Mission" button
+        missionsViewEl.innerHTML = '';
+        
+        activeCollaborator.missions.forEach(mission => {
+            missionsViewEl.appendChild(createMissionCardElement(mission));
+        });
+        
+        const addMissionSection = document.createElement('div');
+        addMissionSection.id = 'add-mission-section';
+        addMissionSection.innerHTML = `<button id="add-mission-btn">+ Ajouter une Mission</button>`;
+        missionsViewEl.appendChild(addMissionSection);
+
+        document.getElementById('add-mission-btn').addEventListener('click', handleAddMission);
+    }
+    
+    function renderCRs() {
+        // This function remains largely the same as before, just adapted for collaborators
+        const crListEl = document.getElementById('cr-list');
+        const crDetailContainer = document.getElementById('cr-detail-container');
+        const activeCollaborator = state.collaborators[state.activeCollaboratorId];
+        
+        crListEl.innerHTML = '';
+        activeCollaborator.crs.forEach(cr => {
+            const li = document.createElement('li');
+            li.textContent = `CR du ${new Date(cr.date).toLocaleDateString('fr-FR')}`;
+            li.dataset.crId = cr.id;
+            if (cr.id === state.activeCrId) li.classList.add('active');
+            li.addEventListener('click', () => { state.activeCrId = cr.id; renderCRs(); });
+            crListEl.appendChild(li);
+        });
+
+        const activeCr = activeCollaborator.crs.find(cr => cr.id === state.activeCrId);
+        if (activeCr) {
+            crDetailContainer.innerHTML = createCrDetailHtml(activeCr);
+            attachCrDetailEventListeners(activeCr);
+        } else {
+            crDetailContainer.innerHTML = '<div class="empty-state"><p>Sélectionnez un compte-rendu ou créez-en un nouveau.</p></div>';
+        }
+    }
+
+    // --- Element Creation ---
+    function createMissionCardElement(mission) {
+        const card = document.createElement('div');
+        card.className = 'mission-card';
+        card.dataset.missionId = mission.id;
+
+        const tasksByStatus = { todo: [], inprogress: [], done: [], blocked: [] };
+        const statusMap = { "À faire": 'todo', "En cours": 'inprogress', "Terminé": 'done', "Bloqué": 'blocked' };
+        mission.tasks.forEach(task => {
+            tasksByStatus[statusMap[task.status]].push(task);
+        });
+
+        card.innerHTML = `
+            <div class="mission-header">
+                <h3>${mission.title}</h3>
+                <div class="mission-header-actions">
+                    <button class="edit-mission-btn" title="Modifier la mission">✏️</button>
+                    <button class="delete-mission-btn" title="Supprimer la mission">🗑️</button>
+                </div>
+            </div>
+            <div class="mission-content">
+                <div class="task-column">
+                    <h4>À Faire</h4>
+                    <ul class="task-list todo-list">${tasksByStatus.todo.map(t => createTaskHtml(t)).join('')}</ul>
+                </div>
+                <div class="task-column">
+                    <h4>En Cours</h4>
+                    <ul class="task-list inprogress-list">${tasksByStatus.inprogress.map(t => createTaskHtml(t)).join('')}</ul>
+                </div>
+                <div class="task-column">
+                    <h4>Bloqué</h4>
+                    <ul class="task-list blocked-list">${tasksByStatus.blocked.map(t => createTaskHtml(t)).join('')}</ul>
+                </div>
+                 <div class="task-column">
+                    <h4>Terminé</h4>
+                    <ul class="task-list done-list">${tasksByStatus.done.map(t => createTaskHtml(t)).join('')}</ul>
+                </div>
+            </div>
+            <form class="add-task-form">
+                <input type="text" class="new-task-input" placeholder="Nouvelle tâche pour cette mission..." required>
+                <button type="submit" class="add-task-btn">Ajouter</button>
+            </form>
+        `;
+        // Attach event listeners for this specific card
+        card.addEventListener('click', handleCardClick);
+        card.addEventListener('change', handleCardChange);
+        card.addEventListener('submit', handleCardSubmit);
+        return card;
+    }
+
+    function createTaskHtml(task) {
+        const statusClass = task.status.toLowerCase().replace(/[^a-z]/g, '');
+        return `
+            <li class="task status-${statusClass}" data-task-id="${task.id}">
+                <span>${task.text}</span>
+                <div class="task-controls">
+                    <select class="task-status">
+                        <option value="À faire" ${task.status === 'À faire' ? 'selected' : ''}>À faire</option>
+                        <option value="En cours" ${task.status === 'En cours' ? 'selected' : ''}>En cours</option>
+                        <option value="Bloqué" ${task.status === 'Bloqué' ? 'selected' : ''}>Bloqué</option>
+                        <option value="Terminé" ${task.status === 'Terminé' ? 'selected' : ''}>Terminé</option>
+                    </select>
+                    <button class="delete-task-btn" title="Supprimer la tâche">&times;</button>
+                </div>
+            </li>
+        `;
+    }
+    
+    // --- Event Handlers (Delegated on Mission Card) ---
+    function handleCardClick(event) {
+        const missionId = event.currentTarget.dataset.missionId;
+        const activeCollaborator = state.collaborators[state.activeCollaboratorId];
+        const mission = activeCollaborator.missions.find(m => m.id === missionId);
+
+        if (event.target.classList.contains('delete-task-btn')) {
+            const taskId = event.target.closest('.task').dataset.taskId;
+            const task = mission.tasks.find(t => t.id === taskId);
+            if (confirm(`Voulez-vous vraiment supprimer la tâche "${task.text}" ?`)) {
+                mission.tasks = mission.tasks.filter(t => t.id !== taskId);
+                render();
+            }
+        } else if (event.target.classList.contains('delete-mission-btn')) {
+            if (confirm(`Voulez-vous vraiment supprimer la mission "${mission.title}" ?`)) {
+                activeCollaborator.missions = activeCollaborator.missions.filter(m => m.id !== missionId);
+                render();
+            }
+        } else if (event.target.classList.contains('edit-mission-btn')) {
+            const newTitle = prompt("Nouveau nom pour la mission :", mission.title);
+            if (newTitle && newTitle.trim() !== '') {
+                mission.title = newTitle.trim();
+                render();
+            }
+        }
+    }
+
+    function handleCardChange(event) {
+        if (event.target.classList.contains('task-status')) {
+            const missionId = event.currentTarget.dataset.missionId;
+            const taskId = event.target.closest('.task').dataset.taskId;
+            const mission = state.collaborators[state.activeCollaboratorId].missions.find(m => m.id === missionId);
+            const task = mission.tasks.find(t => t.id === taskId);
+            task.status = event.target.value;
+            render();
+        }
+    }
+
+    function handleCardSubmit(event) {
+        event.preventDefault();
+        if (event.target.classList.contains('add-task-form')) {
+            const missionId = event.currentTarget.dataset.missionId;
+            const input = event.target.querySelector('.new-task-input');
+            const taskText = input.value.trim();
+            if (taskText) {
+                const mission = state.collaborators[state.activeCollaboratorId].missions.find(m => m.id === missionId);
+                const newTask = { id: `task-${Date.now()}`, text: taskText, status: 'À faire' };
+                mission.tasks.push(newTask);
+                input.value = '';
+                render();
+            }
+        }
+    }
+    
+    function handleAddMission() {
+        const title = prompt("Titre de la nouvelle mission :");
+        if (title && title.trim() !== '') {
+            const newMission = {
+                id: `mission-${Date.now()}`,
+                title: title.trim(),
+                tasks: []
+            };
+            state.collaborators[state.activeCollaboratorId].missions.push(newMission);
+            render();
+        }
+    }
+
+    // --- Global Event Listeners ---
+    addCollaboratorBtn.addEventListener('click', () => {
+        const name = prompt("Nom du nouveau collaborateur :");
+        if (!name || name.trim() === '') return;
+
+        const newCollabId = `collab-${Date.now()}`;
+        state.collaborators[newCollabId] = {
+            id: newCollabId,
+            name: name.trim(),
+            missions: [],
+            crs: []
+        };
+        state.activeCollaboratorId = newCollabId;
+        state.activeView = 'missions-view';
+        render();
+    });
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            state.activeView = tab.dataset.view;
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            renderActiveView();
+            saveState();
+        });
+    });
+
+    // --- CR Logic (mostly unchanged, just aliased for clarity) ---
+    const createCrDetailHtml = (cr) => { /* HTML generation code from previous version */ 
+        let decisionsHtml = cr.decisions.map((d, index) => `
+            <tr data-decision-index="${index}">
+                <td><input type="text" value="${d.decision}" data-field="decision"></td>
+                <td><input type="text" value="${d.owner}" data-field="owner"></td>
+                <td><input type="date" value="${d.dueDate}" data-field="dueDate"></td>
+                <td><span class="delete-row-btn" title="Supprimer la ligne">&times;</span></td>
+            </tr>
+        `).join('');
+        return `
+            <div class="cr-field"><label for="cr-date">Date du CR</label><input type="date" id="cr-date" value="${new Date(cr.date).toISOString().split('T')[0]}"></div>
+            <div class="cr-field"><label for="cr-participants">Participants</label><input type="text" id="cr-participants" value="${cr.participants}"></div>
+            <div class="cr-field"><label for="cr-notes">Notes / Discussions</label><textarea id="cr-notes">${cr.notes}</textarea></div>
+            <div class="cr-field"><label>Relevé de Décisions</label><table id="decision-table"><thead><tr><th>Décision</th><th>Porteur</th><th>Échéance</th><th></th></tr></thead><tbody>${decisionsHtml}</tbody></table><button id="add-decision-btn" style="margin-top:10px;">+ Ajouter une décision</button></div>
+            <button id="delete-cr-btn" style="background-color: var(--status-blocked); color:white; border:none; padding: 8px 12px; border-radius: 5px; cursor:pointer;">Supprimer ce CR</button>
+        `;
+    };
+    const attachCrDetailEventListeners = (cr) => { /* Event listener attachment from previous version */ 
+        const container = document.getElementById('cr-detail-container');
+        container.querySelector('#cr-date').addEventListener('change', (e) => { cr.date = new Date(e.target.value).getTime(); saveState(); renderCRs(); });
+        container.querySelector('#cr-participants').addEventListener('blur', (e) => { cr.participants = e.target.value; saveState(); });
+        container.querySelector('#cr-notes').addEventListener('blur', (e) => { cr.notes = e.target.value; saveState(); });
+        const table = container.querySelector('#decision-table');
+        table.addEventListener('change', (e) => {
+            if (e.target.tagName === 'INPUT') {
+                const tr = e.target.closest('tr');
+                const index = tr.dataset.decisionIndex;
+                const field = e.target.dataset.field;
+                cr.decisions[index][field] = e.target.value;
+                saveState();
+            }
+        });
+        table.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-row-btn')) {
+                const tr = e.target.closest('tr');
+                const index = tr.dataset.decisionIndex;
+                cr.decisions.splice(index, 1);
+                renderCRs();
+                saveState();
+            }
+        });
+        container.querySelector('#add-decision-btn').addEventListener('click', () => { cr.decisions.push({ decision: '', owner: '', dueDate: '' }); renderCRs(); saveState(); });
+        container.querySelector('#delete-cr-btn').addEventListener('click', () => {
+            if(confirm('Voulez-vous vraiment supprimer ce compte-rendu ?')) {
+                const collab = state.collaborators[state.activeCollaboratorId];
+                collab.crs = collab.crs.filter(c => c.id !== cr.id);
+                state.activeCrId = null;
+                render();
+            }
+        });
+    };
+    document.getElementById('cr-view').addEventListener('click', (e) => {
+        if (e.target.id === 'add-cr-btn') {
+            const collab = state.collaborators[state.activeCollaboratorId];
+            const newCr = { id: `cr-${Date.now()}`, date: Date.now(), participants: collab.name || '', notes: '', decisions: [] };
+            collab.crs.push(newCr);
+            collab.crs.sort((a,b) => b.date - a.date);
+            state.activeCrId = newCr.id;
+            render();
+        }
+    });
+    
+    function showView(viewId) {
+        views.forEach(v => v.classList.remove('active'));
+        document.getElementById(viewId)?.classList.add('active');
+        document.getElementById('view-switcher').style.display = (viewId === 'empty-state-view') ? 'none' : 'block';
+    }
+
+    // --- Initial Load ---
+    loadState();
+    render();
+});
+</script>
+
+</body>
+</html>
