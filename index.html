@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synchro-Board - Suivi Complet</title>
+    <title>Synchro-Board - Outil d'Analyse Stratégique</title>
     <style>
         :root {
             --bg-color: #f4f7fa;
@@ -64,11 +64,11 @@
         .detail-field label { display: block; font-weight: 600; margin-bottom: 5px; }
         .detail-field input, .detail-field textarea { width: 98%; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; font-family: inherit; font-size: 1em; }
         .detail-field textarea { min-height: 80px; resize: vertical; }
+        .analysis-btn { margin-left: 10px; background: none; border: none; cursor: pointer; font-size: 1.2em; }
         
-        /* --- Vue Feuille de Route & CR --- */
+        /* --- Styles spécifiques (Feuille de Route, CR, Propositions) --- */
         .roadmap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .roadmap-grid .detail-field.full { grid-column: span 2; }
-        .roadmap-grid .detail-field.half { grid-column: span 1; }
         .task-list { list-style: none; padding: 0; margin: 0; }
         .task { background-color: #fdfdfd; border: 1px solid var(--border-color); padding: 10px; margin-bottom: 8px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
         .task.status-todo { border-left: 4px solid var(--status-todo); }
@@ -86,8 +86,6 @@
         #decision-table th { background-color: #f8f9fa; }
         #decision-table input { width: 95%; border: none; }
         .delete-row-btn { cursor: pointer; color: var(--status-refused); }
-        
-        /* --- Vue Propositions Externes --- */
         .proposal-item-header { display: flex; justify-content: space-between; font-weight: 600; color: var(--text-dark); }
         .proposal-item-details { font-size: 0.85em; color: var(--text-light); margin-top: 4px; }
         .proposal-score { font-size: 1.1em; font-weight: bold; }
@@ -105,7 +103,10 @@
         .criterion-score { display: flex; align-items: center; gap: 10px; }
         .criterion-score input[type="range"] { width: 120px; }
         .criterion-score span { font-weight: bold; width: 40px; text-align: center; }
-        .criterion-comment { width: 98%; margin-top: 10px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; resize: vertical; }
+        .criterion-comment-area { margin-top: 10px; }
+        .swot-display { font-size: 0.9em; color: var(--text-light); border: 1px dashed var(--border-color); padding: 10px; border-radius: 5px; margin-top: 5px; }
+        .swot-display p { margin: 0 0 5px 0; }
+        .swot-display strong { color: var(--text-dark); }
         .summary-section { margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px; }
         .summary-grid { display: flex; justify-content: space-between; align-items: center; }
         .total-score h3 { margin: 0; font-size: 1.2em; }
@@ -115,11 +116,26 @@
         .btn-accept { background-color: var(--status-accepted); color: white; }
         .btn-refuse { background-color: var(--status-refused); color: white; }
 
+        /* --- Modal pour les outils d'analyse --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6); z-index: 1000;
+            display: none; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 8px;
+            width: 90%; max-width: 800px; max-height: 90vh;
+            overflow-y: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .modal-content h3 { margin-top: 0; }
+        .modal-close { float: right; font-size: 1.5em; cursor: pointer; border: none; background: none; }
+        .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .analysis-grid textarea { width: 95%; min-height: 100px; }
+
         .empty-state { text-align: center; padding: 50px; color: var(--text-light); }
     </style>
 </head>
 <body>
-
     <aside id="sidebar">
         <h1>Synchro-Board</h1>
         <ul id="collaborator-list"></ul>
@@ -127,10 +143,7 @@
     </aside>
 
     <main id="main-content">
-        <header id="header">
-            <h2 id="collaborator-title"></h2>
-        </header>
-
+        <header id="header"><h2 id="collaborator-title"></h2></header>
         <div id="view-switcher">
             <div class="tabs">
                 <div class="tab active" data-view="roadmaps-view">Feuilles de Route</div>
@@ -138,7 +151,6 @@
                 <div class="tab" data-view="cr-view">CR & Décisions</div>
             </div>
         </div>
-
         <div id="main-view-container">
             <div id="roadmaps-view" class="view active view-container"></div>
             <div id="proposals-view" class="view view-container"></div>
@@ -147,9 +159,17 @@
         </div>
     </main>
 
+    <!-- Modal pour les outils d'analyse -->
+    <div id="analysis-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // --- State Management ---
+    // --- State Management & Definitions ---
     let state = {};
 
     const PROPOSAL_CRITERIA = {
@@ -168,27 +188,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function saveState() {
-        localStorage.setItem('synchroBoardUnifiedStateV4', JSON.stringify(state));
+        localStorage.setItem('synchroBoardStrategicState', JSON.stringify(state));
     }
 
     function loadState() {
-        const savedState = localStorage.getItem('synchroBoardUnifiedStateV4');
+        const savedState = localStorage.getItem('synchroBoardStrategicState');
         if (savedState) {
             state = JSON.parse(savedState);
         } else {
-            // Initial state for a new user is a clean slate
             const initialCollabId = `collab-${Date.now()}`;
             state = {
                 collaborators: {
                     [initialCollabId]: {
                         id: initialCollabId, name: "Premier Collaborateur",
-                        roadmaps: [],
-                        activeRoadmapId: null,
-                        proposals: {}, 
-                        activeProposalId: null, 
-                        proposalFilter: 'all',
-                        crs: [],
-                        activeCrId: null
+                        roadmaps: [], activeRoadmapId: null,
+                        proposals: {}, activeProposalId: null, proposalFilter: 'all',
+                        crs: [], activeCrId: null
                     }
                 },
                 activeCollaboratorId: initialCollabId,
@@ -197,6 +212,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Helper & Utility Functions ---
+    function showView(viewId) {
+        document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+        const viewEl = document.getElementById(viewId);
+        if (viewEl) viewEl.style.display = 'block';
+        document.getElementById('view-switcher').style.display = (viewId === 'empty-state-view') ? 'none' : 'block';
+    }
+
+    function calculateRawScore(proposal) { return PROPOSAL_CRITERIA.scoring.reduce((sum, crit) => sum + (Number(proposal.criteria[crit.key]?.s) || 0), 0); }
+    function getDisplayScore(rawScore) { const max = PROPOSAL_CRITERIA.scoring.length * 2; return max === 0 ? 0 : (rawScore / max) * 20; }
+    function createTaskElement(task) { return `<li class="task status-${task.status.toLowerCase().replace(/[^a-z]/g, '')}" data-task-id="${task.id}"><span>${task.text}</span><div class="task-controls"><select class="task-status"><option value="À faire" ${task.status === 'À faire' ? 'selected' : ''}>À faire</option><option value="En cours" ${task.status === 'En cours' ? 'selected' : ''}>En cours</option><option value="Terminé" ${task.status === 'Terminé' ? 'selected' : ''}>Terminé</option><option value="Bloqué" ${task.status === 'Bloqué' ? 'selected' : ''}>Bloqué</option></select><button class="delete-task-btn" title="Supprimer">&times;</button></div></li>`; }
+
     // --- Main Render Functions ---
     function render() {
         saveState();
@@ -204,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderActiveView();
     }
 
-    function renderCollaborators() {
+    function renderCollaborators() { 
         const listEl = document.getElementById('collaborator-list');
         listEl.innerHTML = '';
         if (Object.keys(state.collaborators).length === 0) {
@@ -219,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
             li.addEventListener('click', () => { state.activeCollaboratorId = collaborator.id; render(); });
             listEl.appendChild(li);
         }
-    }
+     }
 
     function renderActiveView() {
         const activeCollaborator = state.collaborators[state.activeCollaboratorId];
@@ -244,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- View-Specific Renderers ---
-    function renderRoadmapsView(collaborator) { 
+    function renderRoadmapsView(collaborator) {
         const container = document.getElementById('roadmaps-view');
         container.innerHTML = `
             <aside class="sidebar-container">
@@ -253,6 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="add-item-btn" id="add-roadmap-btn">+ Nouvelle Feuille de Route</button>
             </aside>
             <section class="detail-container" id="roadmap-detail-container"></section>`;
+        
         const listEl = document.getElementById('roadmap-list');
         (collaborator.roadmaps || []).forEach(roadmap => {
             const li = document.createElement('li');
@@ -262,15 +290,36 @@ document.addEventListener('DOMContentLoaded', () => {
             li.addEventListener('click', () => { collaborator.activeRoadmapId = roadmap.id; render(); });
             listEl.appendChild(li);
         });
+        
         const roadmap = (collaborator.roadmaps || []).find(r => r.id === collaborator.activeRoadmapId);
         const detailEl = document.getElementById('roadmap-detail-container');
-        if (!roadmap) { detailEl.innerHTML = '<div class="empty-state"><p>Sélectionnez une feuille de route.</p></div>'; return; }
+        if (!roadmap) {
+            detailEl.innerHTML = '<div class="empty-state"><p>Sélectionnez une feuille de route.</p></div>';
+            return;
+        }
+        
         const tasksHtml = (roadmap.priorityTasks || []).map(createTaskElement).join('');
-        detailEl.innerHTML = `<div class="roadmap-grid"><div class="detail-field half"><label>Période</label><input type="text" data-field="period" value="${roadmap.period || ''}"></div><div class="detail-field half"><label>Prochaine rencontre</label><input type="text" data-field="nextMeeting" value="${roadmap.nextMeeting || ''}"></div><div class="detail-field full"><label>Objectifs principaux</label><textarea data-field="mainObjectives">${roadmap.mainObjectives || ''}</textarea></div><div class="detail-field full"><label>Tâches prioritaires</label><ul class="task-list">${tasksHtml}</ul><form id="add-task-form"><input type="text" id="new-task-input" placeholder="Nouvelle tâche..." required><button type="submit">+</button></form></div><div class="detail-field full"><label>Rendez-vous / réunions importantes</label><textarea data-field="meetings">${roadmap.meetings || ''}</textarea></div><div class="detail-field full"><label>Suivi des actions précédentes</label><textarea data-field="followUp">${roadmap.followUp || ''}</textarea></div><div class="detail-field full"><label>Observations / ajustements à prévoir</label><textarea data-field="observations">${roadmap.observations || ''}</textarea></div></div>`;
+        detailEl.innerHTML = `
+            <div class="roadmap-grid">
+                <div class="detail-field half"><label>Période</label><input type="text" data-field="period" value="${roadmap.period || ''}"></div>
+                <div class="detail-field half"><label>Prochaine rencontre</label><input type="text" data-field="nextMeeting" value="${roadmap.nextMeeting || ''}"></div>
+                <div class="detail-field full">
+                    <label>Objectifs principaux <button class="analysis-btn" data-tool="level2" title="Analyse de 2e niveau">🧠</button></label>
+                    <textarea data-field="mainObjectives">${roadmap.mainObjectives || ''}</textarea>
+                </div>
+                <div class="detail-field full">
+                    <label>Tâches prioritaires <button class="analysis-btn" data-tool="impact-effort" title="Matrice Impact/Effort">🧠</button></label>
+                    <ul class="task-list">${tasksHtml}</ul>
+                    <form id="add-task-form"><input type="text" id="new-task-input" placeholder="Nouvelle tâche..." required><button type="submit" id="add-task-btn">+</button></form>
+                </div>
+                <div class="detail-field full"><label>Rendez-vous / réunions importantes</label><textarea data-field="meetings">${roadmap.meetings || ''}</textarea></div>
+                <div class="detail-field full"><label>Suivi des actions précédentes</label><textarea data-field="followUp">${roadmap.followUp || ''}</textarea></div>
+                <div class="detail-field full"><label>Observations / ajustements à prévoir</label><textarea data-field="observations">${roadmap.observations || ''}</textarea></div>
+            </div>`;
         attachRoadmapListeners(roadmap);
     }
     
-    function renderCRsView(collaborator) { 
+    function renderCRsView(collaborator) {
         const container = document.getElementById('cr-view');
         container.innerHTML = `
             <aside class="sidebar-container">
@@ -279,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="add-item-btn" id="add-cr-btn">+ Nouveau CR</button>
             </aside>
             <section class="detail-container" id="cr-detail-container"></section>`;
+
         const listEl = document.getElementById('cr-list');
         (collaborator.crs || []).forEach(cr => {
             const li = document.createElement('li');
@@ -288,11 +338,32 @@ document.addEventListener('DOMContentLoaded', () => {
             li.addEventListener('click', () => { collaborator.activeCrId = cr.id; render(); });
             listEl.appendChild(li);
         });
+
         const cr = (collaborator.crs || []).find(c => c.id === collaborator.activeCrId);
         const detailEl = document.getElementById('cr-detail-container');
-        if (!cr) { detailEl.innerHTML = '<div class="empty-state"><p>Sélectionnez un compte-rendu.</p></div>'; return; }
+        if (!cr) {
+            detailEl.innerHTML = '<div class="empty-state"><p>Sélectionnez un compte-rendu.</p></div>';
+            return;
+        }
+
         const decisionsHtml = (cr.decisions || []).map((d, i) => `<tr data-decision-index="${i}"><td><input type="text" data-field="decision" value="${d.decision || ''}"></td><td><input type="text" data-field="owner" value="${d.owner || ''}"></td><td><input type="date" data-field="dueDate" value="${d.dueDate || ''}"></td><td><span class="delete-row-btn" title="Supprimer">&times;</span></td></tr>`).join('');
-        detailEl.innerHTML = `<div class="roadmap-grid"><div class="detail-field half"><label>Date</label><input type="date" data-field="date" value="${cr.date}"></div><div class="detail-field half"><label>Animé par</label><input type="text" data-field="animator" value="${cr.animator || ''}"></div><div class="detail-field half"><label>Présents</label><textarea data-field="attendees">${cr.attendees || ''}</textarea></div><div class="detail-field half"><label>Absents</label><textarea data-field="absentees">${cr.absentees || ''}</textarea></div><div class="detail-field full"><label>Points abordés</label><textarea data-field="discussion">${cr.discussion || ''}</textarea></div><div class="detail-field full"><label>Relevé de décisions</label><table id="decision-table"><thead><tr><th>Décision</th><th>Porteur</th><th>Échéance</th><th></th></tr></thead><tbody>${decisionsHtml}</tbody></table><button id="add-decision-btn" class="add-item-btn" style="width:auto; margin-top:10px;">+ Ajouter décision</button></div><div class="detail-field full"><label>Questions nécessitant une réponse</label><textarea data-field="questions">${cr.questions || ''}</textarea></div></div>`;
+        detailEl.innerHTML = `
+            <div class="roadmap-grid">
+                <div class="detail-field half"><label>Date</label><input type="date" data-field="date" value="${cr.date}"></div>
+                <div class="detail-field half"><label>Animé par</label><input type="text" data-field="animator" value="${cr.animator || ''}"></div>
+                <div class="detail-field half"><label>Présents</label><textarea data-field="attendees">${cr.attendees || ''}</textarea></div>
+                <div class="detail-field half"><label>Absents</label><textarea data-field="absentees">${cr.absentees || ''}</textarea></div>
+                <div class="detail-field full"><label>Points abordés</label><textarea data-field="discussion">${cr.discussion || ''}</textarea></div>
+                <div class="detail-field full">
+                    <label>Relevé de décisions</label>
+                    <table id="decision-table"><thead><tr><th>Décision</th><th>Porteur</th><th>Échéance</th><th></th></tr></thead><tbody>${decisionsHtml}</tbody></table>
+                    <button id="add-decision-btn" class="add-item-btn" style="width:auto; margin-top:10px;">+ Ajouter décision</button>
+                </div>
+                <div class="detail-field full">
+                    <label>Questions nécessitant une réponse <button class="analysis-btn" data-tool="7s" title="Analyse 7S de McKinsey">🧠</button></label>
+                    <textarea data-field="questions">${cr.questions || ''}</textarea>
+                </div>
+            </div>`;
         attachCRListeners(cr);
     }
 
@@ -344,7 +415,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const criteriaHtml = PROPOSAL_CRITERIA.scoring.map(crit => {
             const scoreData = proposal.criteria[crit.key] || {s: 0, c: ''};
-            return `<div class="criterion"><div class="criterion-header"><label for="range-${crit.key}">${crit.label}</label><div class="criterion-score"><input type="range" id="range-${crit.key}" data-criterion="${crit.key}" min="0" max="2" step="0.5" value="${scoreData.s}"><span>${Number(scoreData.s).toFixed(1)}</span></div></div><textarea class="criterion-comment" data-criterion="${crit.key}" placeholder="Justification...">${scoreData.c}</textarea></div>`;
+            const analysis = scoreData.analysis || {};
+            const hasAnalysis = Object.values(analysis).some(v => v);
+            const analysisDisplay = hasAnalysis ? `
+                <div class="swot-display">
+                    <p><strong>Forces:</strong> ${analysis.s || '...'}</p>
+                    <p><strong>Faiblesses:</strong> ${analysis.w || '...'}</p>
+                    <p><strong>Opportunités:</strong> ${analysis.o || '...'}</p>
+                    <p><strong>Menaces:</strong> ${analysis.t || '...'}</p>
+                </div>` : '';
+
+            return `<div class="criterion">
+                <div class="criterion-header">
+                    <label>${crit.label}</label>
+                    <div class="criterion-score"><input type="range" id="range-${crit.key}" data-criterion="${crit.key}" min="0" max="2" step="0.5" value="${scoreData.s}"><span>${Number(scoreData.s).toFixed(1)}</span></div>
+                </div>
+                <div class="criterion-comment-area">
+                    <button class="analysis-btn" data-tool="swot" data-criterion="${crit.key}" title="Analyse SWOT">🧠 Analyser</button>
+                    ${analysisDisplay}
+                </div>
+            </div>`;
         }).join('');
         const finalCritData = proposal.criteria[PROPOSAL_CRITERIA.final_comment.key] || {s:0, c:''};
         const displayScore = getDisplayScore(calculateRawScore(proposal));
@@ -376,9 +466,48 @@ document.addEventListener('DOMContentLoaded', () => {
         attachProposalListeners(proposal);
     }
     
-    // --- Element & Listener Helpers ---
-    function createTaskElement(task) { return `<li class="task status-${task.status.toLowerCase().replace(/[^a-z]/g, '')}" data-task-id="${task.id}"><span>${task.text}</span><div class="task-controls"><select class="task-status"><option value="À faire" ${task.status === 'À faire' ? 'selected' : ''}>À faire</option><option value="En cours" ${task.status === 'En cours' ? 'selected' : ''}>En cours</option><option value="Terminé" ${task.status === 'Terminé' ? 'selected' : ''}>Terminé</option><option value="Bloqué" ${task.status === 'Bloqué' ? 'selected' : ''}>Bloqué</option></select><button class="delete-task-btn" title="Supprimer">&times;</button></div></li>`; }
-    
+    // --- Modal & Analysis Tools Logic ---
+    const modal = document.getElementById('analysis-modal');
+    const modalBody = document.getElementById('modal-body');
+    const modalCloseBtn = modal.querySelector('.modal-close');
+
+    modalCloseBtn.addEventListener('click', () => modal.style.display = 'none');
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+    });
+
+    function openAnalysisModal(tool, context) {
+        modal.style.display = 'flex';
+        let content = '';
+        switch(tool) {
+            case 'swot':
+                const analysis = context.analysis || {};
+                content = `
+                    <h3>Analyse SWOT pour "${context.label}"</h3>
+                    <div class="analysis-grid">
+                        <div><label>Forces (Interne)</label><textarea id="swot-s">${analysis.s || ''}</textarea></div>
+                        <div><label>Faiblesses (Interne)</label><textarea id="swot-w">${analysis.w || ''}</textarea></div>
+                        <div><label>Opportunités (Externe)</label><textarea id="swot-o">${analysis.o || ''}</textarea></div>
+                        <div><label>Menaces (Externe)</label><textarea id="swot-t">${analysis.t || ''}</textarea></div>
+                    </div>
+                    <button id="save-swot-btn">Sauvegarder l'Analyse</button>`;
+                modalBody.innerHTML = content;
+                document.getElementById('save-swot-btn').onclick = () => {
+                    context.analysis = {
+                        s: document.getElementById('swot-s').value,
+                        w: document.getElementById('swot-w').value,
+                        o: document.getElementById('swot-o').value,
+                        t: document.getElementById('swot-t').value,
+                    };
+                    modal.style.display = 'none';
+                    render();
+                };
+                break;
+            // Other cases for '7s', 'level2', 'impact-effort' would go here
+        }
+    }
+
+    // --- Event Listeners ---
     function attachRoadmapListeners(roadmap) {
         const container = document.getElementById('roadmap-detail-container');
         container.addEventListener('change', e => {
@@ -503,6 +632,21 @@ document.addEventListener('DOMContentLoaded', () => {
             activeCollaborator.activeProposalId = newId;
             render();
         }
+        if (e.target.classList.contains('analysis-btn')) {
+            const tool = e.target.dataset.tool;
+            let context = {};
+            if (tool === 'swot') {
+                const critKey = e.target.dataset.criterion;
+                const proposal = activeCollaborator.proposals[activeCollaborator.activeProposalId];
+                if (!proposal.criteria[critKey]) proposal.criteria[critKey] = {};
+                if (!proposal.criteria[critKey].analysis) proposal.criteria[critKey].analysis = {};
+                context = {
+                    label: PROPOSAL_CRITERIA.scoring.find(c => c.key === critKey).label,
+                    analysis: proposal.criteria[critKey].analysis
+                };
+            }
+            openAnalysisModal(tool, context);
+        }
     });
     
     document.getElementById('main-view-container').addEventListener('change', e => {
@@ -511,21 +655,9 @@ document.addEventListener('DOMContentLoaded', () => {
             render();
         }
     });
-
-    // --- Score Calculation ---
-    function calculateRawScore(proposal) { return PROPOSAL_CRITERIA.scoring.reduce((sum, crit) => sum + (Number(proposal.criteria[crit.key]?.s) || 0), 0); }
-    function getDisplayScore(rawScore) { const max = PROPOSAL_CRITERIA.scoring.length * 2; return max === 0 ? 0 : (rawScore / max) * 20; }
-
-    function showView(viewId) {
-        document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-        const viewEl = document.getElementById(viewId);
-        if (viewEl) viewEl.style.display = 'block';
-        document.getElementById('view-switcher').style.display = (viewId === 'empty-state-view') ? 'none' : 'block';
-    }
-
+    
     // --- Initial Load ---
     loadState();
-    // Quick patch to ensure all collaborators have all modules
     Object.values(state.collaborators).forEach(c => {
         if (!c.roadmaps) c.roadmaps = [];
         if (!c.proposals) c.proposals = {};
@@ -533,11 +665,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     render();
 });
-</script>
-
-</body>
-</html>
-
 </script>
 
 </body>
