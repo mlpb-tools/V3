@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synchro-Board - Suivi Collaborateur</title>
+    <title>Synchro-Board - Suivi Complet</title>
     <style>
         :root {
             --bg-color: #f4f7fa;
@@ -19,171 +19,102 @@
             --status-inprogress: #f1c40f;
             --status-done: #2ecc71;
             --status-blocked: #e74c3c;
+            --status-eval: #f1c40f;
+            --status-accepted: #2ecc71;
+            --status-refused: #e74c3c;
         }
 
         /* --- Structure Générale --- */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            background-color: var(--bg-color);
-            color: var(--text-dark);
+            margin: 0; display: flex; height: 100vh; overflow: hidden; background-color: var(--bg-color); color: var(--text-dark);
         }
+        #sidebar { width: 280px; background-color: var(--sidebar-bg); color: var(--sidebar-text); padding: 20px; display: flex; flex-direction: column; flex-shrink: 0; }
+        #main-content { flex-grow: 1; display: flex; flex-direction: column; overflow-y: auto; }
 
-        #sidebar {
-            width: 280px;
-            background-color: var(--sidebar-bg);
-            color: var(--sidebar-text);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            flex-shrink: 0;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-        }
-
-        #main-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
-        /* --- Barre Latérale (Sidebar) --- */
-        #sidebar h1 {
-            font-size: 1.6em;
-            margin: 0 0 20px 0;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        #collaborator-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            flex-grow: 1;
-            overflow-y: auto;
-        }
-
-        #collaborator-list li {
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            border-left: 4px solid transparent;
-        }
-
-        #collaborator-list li:hover {
-            background-color: #34495e;
-        }
-
-        #collaborator-list li.active {
-            background-color: var(--header-color);
-            font-weight: 600;
-            border-left: 4px solid var(--sidebar-text);
-            transform: scale(1.02);
-        }
-
-        #add-collaborator-btn {
-            background-color: var(--header-color);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
-        #add-collaborator-btn:hover {
-            background-color: #2980b9;
-        }
+        /* --- Barre Latérale (Collaborateurs) --- */
+        #sidebar h1 { font-size: 1.6em; margin: 0 0 20px 0; text-align: center; font-weight: 600; }
+        #collaborator-list { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; }
+        #collaborator-list li { padding: 12px 15px; margin-bottom: 8px; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; border-left: 4px solid transparent; }
+        #collaborator-list li:hover { background-color: #34495e; }
+        #collaborator-list li.active { background-color: var(--header-color); font-weight: 600; }
+        #add-collaborator-btn { background-color: var(--header-color); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-size: 1em; }
 
         /* --- Contenu Principal --- */
-        #header {
-            padding: 15px 30px;
-            background-color: var(--main-bg);
-            border-bottom: 1px solid var(--border-color);
-            box-shadow: var(--shadow);
-            z-index: 10;
-        }
-
+        #header { padding: 15px 30px; background-color: var(--main-bg); border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow); z-index: 10; }
         #header h2 { margin: 0; font-size: 1.8em; }
-        
-        #view-switcher {
-            padding: 20px 30px 0 30px;
-            background-color: var(--bg-color);
-        }
-
+        #view-switcher { padding: 20px 30px 0 30px; background-color: var(--bg-color); }
         .tabs { display: flex; gap: 10px; border-bottom: 1px solid var(--border-color); }
         .tab { padding: 10px 20px; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 500; color: var(--text-light); }
         .tab.active { color: var(--header-color); border-bottom: 3px solid var(--header-color); }
         
         .view { display: none; padding: 20px 30px; }
         .view.active { display: block; }
-
-        /* --- Vue Missions (Dashboard) --- */
-        #missions-view { display: flex; flex-direction: column; gap: 25px; }
-        .mission-card {
-            background-color: var(--main-bg);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: var(--shadow);
-        }
-        .mission-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
-        .mission-header h3 { margin: 0; font-size: 1.4em; }
-        .mission-header-actions button { background: none; border: none; font-size: 1.2em; cursor: pointer; color: var(--text-light); }
-        .mission-header-actions button:hover { color: var(--text-dark); }
         
-        .mission-content { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .task-column h4 { margin: 0 0 10px 0; }
-        .task-list { list-style: none; padding: 0; margin: 0; min-height: 50px; }
-        .task {
-            background-color: #fdfdfd; border: 1px solid var(--border-color); padding: 12px; margin-bottom: 10px; border-radius: 6px;
-            display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .task.status-todo { border-left: 5px solid var(--status-todo); }
-        .task.status-inprogress { border-left: 5px solid var(--status-inprogress); }
-        .task.status-done { border-left: 5px solid var(--status-done); }
-        .task.status-blocked { border-left: 5px solid var(--status-blocked); }
+        /* --- Styles Communs aux Vues --- */
+        .view-container { display: flex; gap: 20px; height: calc(100vh - 150px); }
+        .sidebar-container { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; }
+        .sidebar-container h3 { margin-top: 0; }
+        .sidebar-list { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; }
+        .sidebar-list li { padding: 10px; margin-bottom: 5px; border-radius: 5px; cursor: pointer; border: 1px solid var(--border-color); background: var(--main-bg); }
+        .sidebar-list li.active { background-color: #eaf5ff; border-color: var(--header-color); }
+        .add-item-btn { width: 100%; margin-top: 10px; padding: 10px; background-color: var(--status-done); color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .detail-container { flex-grow: 1; background-color: var(--main-bg); padding: 20px; border-radius: 8px; box-shadow: var(--shadow); overflow-y: auto; }
+        .detail-field { margin-bottom: 15px; }
+        .detail-field label { display: block; font-weight: 600; margin-bottom: 5px; }
+        .detail-field input, .detail-field textarea { width: 98%; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; font-family: inherit; font-size: 1em; }
+        .detail-field textarea { min-height: 80px; resize: vertical; }
+        
+        /* --- Vue Feuille de Route & CR --- */
+        .roadmap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .roadmap-grid .detail-field.full { grid-column: span 2; }
+        .roadmap-grid .detail-field.half { grid-column: span 1; }
+        .task-list { list-style: none; padding: 0; margin: 0; }
+        .task { background-color: #fdfdfd; border: 1px solid var(--border-color); padding: 10px; margin-bottom: 8px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .task.status-todo { border-left: 4px solid var(--status-todo); }
+        .task.status-inprogress { border-left: 4px solid var(--status-inprogress); }
+        .task.status-done { border-left: 4px solid var(--status-done); }
+        .task.status-blocked { border-left: 4px solid var(--status-blocked); }
         .task-controls { display: flex; align-items: center; gap: 10px; }
-        .task-status { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); background-color: #fff; }
+        .task-status { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); }
         .delete-task-btn { background: none; border: none; cursor: pointer; color: #999; font-size: 1.5em; line-height: 1; }
-        .delete-task-btn:hover { color: var(--status-blocked); }
-        
-        .add-task-form { display: flex; gap: 10px; margin-top: 15px; }
-        .new-task-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; }
-        .add-task-btn { padding: 10px 15px; border: none; background-color: var(--status-todo); color: white; border-radius: 5px; cursor: pointer; font-weight: 500; }
-        
-        #add-mission-section { text-align: center; padding: 20px; }
-        #add-mission-btn {
-            background-color: var(--status-done); color: white; border: none; padding: 12px 25px; border-radius: 6px;
-            cursor: pointer; font-size: 1.1em; font-weight: 500;
-        }
-
-        /* --- Vue Comptes-Rendus (CR) --- */
-        #cr-view { display: flex; gap: 30px; }
-        #cr-list-container { width: 300px; flex-shrink: 0; }
-        #cr-list-container h3 { margin-top: 0; }
-        #cr-list { list-style: none; padding: 0; margin: 0; }
-        #cr-list li { padding: 10px; margin-bottom: 5px; border-radius: 5px; cursor: pointer; border: 1px solid var(--border-color); }
-        #cr-list li.active { background-color: var(--header-color); color: white; border-color: var(--header-color); }
-        #add-cr-btn { width: 100%; margin-top: 10px; padding: 10px; background-color: var(--status-done); color: white; border: none; border-radius: 5px; cursor: pointer; }
-        
-        #cr-detail-container { flex-grow: 1; background-color: var(--main-bg); padding: 20px; border-radius: 8px; box-shadow: var(--shadow); }
-        .cr-field { margin-bottom: 15px; }
-        .cr-field label { display: block; font-weight: 600; margin-bottom: 5px; }
-        .cr-field input, .cr-field textarea { width: 98%; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; }
-        .cr-field textarea { min-height: 120px; resize: vertical; }
+        #add-task-form { display: flex; gap: 10px; margin-top: 15px; }
+        #new-task-input { flex-grow: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; }
+        #add-task-btn { padding: 8px 15px; border: none; background-color: var(--status-todo); color: white; border-radius: 5px; cursor: pointer; }
         #decision-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         #decision-table th, #decision-table td { border: 1px solid var(--border-color); padding: 8px; text-align: left; }
         #decision-table th { background-color: #f8f9fa; }
         #decision-table input { width: 95%; border: none; }
-        .delete-row-btn { cursor: pointer; color: var(--status-blocked); }
+        .delete-row-btn { cursor: pointer; color: var(--status-refused); }
         
-        /* --- État Vide --- */
+        /* --- Vue Propositions Externes --- */
+        .proposal-item-header { display: flex; justify-content: space-between; font-weight: 600; color: var(--text-dark); }
+        .proposal-item-details { font-size: 0.85em; color: var(--text-light); margin-top: 4px; }
+        .proposal-score { font-size: 1.1em; font-weight: bold; }
+        .status-badge { padding: 3px 8px; border-radius: 12px; font-size: 0.8em; color: white; }
+        .status-badge.eval { background-color: var(--status-eval); }
+        .status-badge.accepted { background-color: var(--status-accepted); }
+        .status-badge.refused { background-color: var(--status-refused); }
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .info-item { background-color: #f8f9fa; padding: 15px; border-radius: 6px; }
+        .info-item h4 { margin: 0 0 5px 0; color: var(--text-light); font-size: 0.9em; }
+        .info-item p { margin: 0; font-size: 1.1em; }
+        .criterion { background-color: var(--main-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 15px; }
+        .criterion-header { display: flex; justify-content: space-between; align-items: center; }
+        .criterion-header label { font-weight: 600; flex-grow: 1; font-size: 0.9em; }
+        .criterion-score { display: flex; align-items: center; gap: 10px; }
+        .criterion-score input[type="range"] { width: 120px; }
+        .criterion-score span { font-weight: bold; width: 40px; text-align: center; }
+        .criterion-comment { width: 98%; margin-top: 10px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; resize: vertical; }
+        .summary-section { margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px; }
+        .summary-grid { display: flex; justify-content: space-between; align-items: center; }
+        .total-score h3 { margin: 0; font-size: 1.2em; }
+        .total-score p { margin: 5px 0 0; font-size: 2.5em; font-weight: bold; color: var(--header-color); }
+        .decision-actions button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 600; margin-left: 10px; }
+        .btn-eval { background-color: var(--status-eval); }
+        .btn-accept { background-color: var(--status-accepted); color: white; }
+        .btn-refuse { background-color: var(--status-refused); color: white; }
+
         .empty-state { text-align: center; padding: 50px; color: var(--text-light); }
     </style>
 </head>
@@ -202,92 +133,71 @@
 
         <div id="view-switcher">
             <div class="tabs">
-                <div class="tab active" data-view="missions-view">Missions & Tâches</div>
+                <div class="tab active" data-view="roadmaps-view">Feuilles de Route</div>
+                <div class="tab" data-view="proposals-view">Propositions Externes</div>
                 <div class="tab" data-view="cr-view">CR & Décisions</div>
             </div>
         </div>
 
         <div id="main-view-container">
-            <!-- Vue Missions -->
-            <div id="missions-view" class="view active">
-                <!-- Les cartes de mission seront injectées ici -->
-                 <div id="add-mission-section">
-                    <button id="add-mission-btn">+ Ajouter une Mission</button>
-                </div>
-            </div>
-
-            <!-- Vue Comptes-Rendus -->
-            <div id="cr-view" class="view">
-                <div id="cr-list-container">
-                    <h3>Historique</h3>
-                    <ul id="cr-list"></ul>
-                    <button id="add-cr-btn">+ Nouveau CR</button>
-                </div>
-                <div id="cr-detail-container"></div>
-            </div>
-            
-            <!-- État vide -->
-            <div id="empty-state-view" class="view">
-                <div class="empty-state">
-                    <h2>Bienvenue sur Synchro-Board</h2>
-                    <p>Sélectionnez un collaborateur ou ajoutez-en un nouveau pour commencer.</p>
-                </div>
-            </div>
+            <div id="roadmaps-view" class="view active view-container"></div>
+            <div id="proposals-view" class="view view-container"></div>
+            <div id="cr-view" class="view view-container"></div>
+            <div id="empty-state-view" class="view"></div>
         </div>
     </main>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DOM Elements ---
-    const collaboratorListEl = document.getElementById('collaborator-list');
-    const addCollaboratorBtn = document.getElementById('add-collaborator-btn');
-    const collaboratorTitleEl = document.getElementById('collaborator-title');
-    const tabs = document.querySelectorAll('.tab');
-    const views = document.querySelectorAll('.view');
-    const mainViewContainer = document.getElementById('main-view-container');
-    const missionsViewEl = document.getElementById('missions-view');
-    
     // --- State Management ---
     let state = {};
 
+    const PROPOSAL_CRITERIA = {
+        scoring: [
+            { key: 'c1', label: '1. Alignement avec les missions' },
+            { key: 'c2', label: '2. Cohérence avec les axes stratégiques et le projet associatif' },
+            { key: 'c3', label: "3. Renforcement de l'identité de la ML" },
+            { key: 'c4', label: '4. Public cible' },
+            { key: 'c5', label: '5. Impact potentiel sur les jeunes' },
+            { key: 'c6', label: '6. Modalités pédagogiques, caractère innovant, participation des jeunes, support au diagnostic' },
+            { key: 'c7', label: "7. Nombre de bénéficiaires potentiels/ Potentiel d'extension à d'autres groupes" },
+            { key: 'c8', label: '8. Faisabilité RH nombre de salariés mobilisés, impact sur la charge de travail' },
+            { key: 'c9', label: '9. Faisabilité financière cout total estimé Potentiel de financement externe' },
+        ],
+        final_comment: { key: 'c10', label: '10. Avis référent interne' }
+    };
+
     function saveState() {
-        localStorage.setItem('synchroBoardCollaboratorState', JSON.stringify(state));
+        localStorage.setItem('synchroBoardUnifiedStateV4', JSON.stringify(state));
     }
 
     function loadState() {
-        const savedState = localStorage.getItem('synchroBoardCollaboratorState');
+        const savedState = localStorage.getItem('synchroBoardUnifiedStateV4');
         if (savedState) {
             state = JSON.parse(savedState);
         } else {
+            // Initial state for a new user is a clean slate
             const initialCollabId = `collab-${Date.now()}`;
-            const initialMissionId = `mission-${Date.now()}`;
             state = {
                 collaborators: {
                     [initialCollabId]: {
-                        id: initialCollabId,
-                        name: "Marie Dubois",
-                        missions: [
-                            { 
-                                id: initialMissionId, 
-                                title: "Finaliser la présentation client",
-                                tasks: [
-                                    {id: `task-${Date.now()+1}`, text: "Rédiger la partie 1", status: "Terminé"},
-                                    {id: `task-${Date.now()+2}`, text: "Créer les graphiques", status: "En cours"},
-                                    {id: `task-${Date.now()+3}`, text: "Relire et corriger", status: "À faire"},
-                                ]
-                            }
-                        ],
-                        crs: []
+                        id: initialCollabId, name: "Premier Collaborateur",
+                        roadmaps: [],
+                        activeRoadmapId: null,
+                        proposals: {}, 
+                        activeProposalId: null, 
+                        proposalFilter: 'all',
+                        crs: [],
+                        activeCrId: null
                     }
                 },
                 activeCollaboratorId: initialCollabId,
-                activeView: 'missions-view',
-                activeCrId: null
+                activeView: 'roadmaps-view',
             };
         }
     }
 
-    // --- Render Functions ---
+    // --- Main Render Functions ---
     function render() {
         saveState();
         renderCollaborators();
@@ -295,325 +205,339 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderCollaborators() {
-        collaboratorListEl.innerHTML = '';
+        const listEl = document.getElementById('collaborator-list');
+        listEl.innerHTML = '';
         if (Object.keys(state.collaborators).length === 0) {
-            showView('empty-state-view');
-            return;
+            showView('empty-state-view'); return;
         }
-
         for (const collabId in state.collaborators) {
             const collaborator = state.collaborators[collabId];
             const li = document.createElement('li');
             li.textContent = collaborator.name;
             li.dataset.collaboratorId = collaborator.id;
-            if (collaborator.id === state.activeCollaboratorId) {
-                li.classList.add('active');
-            }
-            li.addEventListener('click', () => {
-                state.activeCollaboratorId = collaborator.id;
-                state.activeCrId = null;
-                render();
-            });
-            collaboratorListEl.appendChild(li);
+            if (collaborator.id === state.activeCollaboratorId) li.classList.add('active');
+            li.addEventListener('click', () => { state.activeCollaboratorId = collaborator.id; render(); });
+            listEl.appendChild(li);
         }
     }
 
     function renderActiveView() {
-        if (!state.activeCollaboratorId || !state.collaborators[state.activeCollaboratorId]) {
+        const activeCollaborator = state.collaborators[state.activeCollaboratorId];
+        if (!activeCollaborator) {
             showView('empty-state-view');
-            collaboratorTitleEl.textContent = '';
+            document.getElementById('collaborator-title').textContent = '';
             return;
         }
         
-        const activeCollaborator = state.collaborators[state.activeCollaboratorId];
-        collaboratorTitleEl.textContent = `Suivi de : ${activeCollaborator.name}`;
-        
+        document.getElementById('collaborator-title').textContent = `Suivi de : ${activeCollaborator.name}`;
         showView(state.activeView);
+        
+        document.querySelectorAll('.tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.view === state.activeView);
+        });
 
-        if (state.activeView === 'missions-view') {
-            renderMissions();
-        } else if (state.activeView === 'cr-view') {
-            renderCRs();
+        switch (state.activeView) {
+            case 'roadmaps-view': renderRoadmapsView(activeCollaborator); break;
+            case 'proposals-view': renderProposalsView(activeCollaborator); break;
+            case 'cr-view': renderCRsView(activeCollaborator); break;
         }
     }
 
-    function renderMissions() {
-        const activeCollaborator = state.collaborators[state.activeCollaboratorId];
-        // Clear previous missions but keep the "Add Mission" button
-        missionsViewEl.innerHTML = '';
-        
-        activeCollaborator.missions.forEach(mission => {
-            missionsViewEl.appendChild(createMissionCardElement(mission));
+    // --- View-Specific Renderers ---
+    function renderRoadmapsView(collaborator) { 
+        const container = document.getElementById('roadmaps-view');
+        container.innerHTML = `
+            <aside class="sidebar-container">
+                <h3>Périodes</h3>
+                <ul class="sidebar-list" id="roadmap-list"></ul>
+                <button class="add-item-btn" id="add-roadmap-btn">+ Nouvelle Feuille de Route</button>
+            </aside>
+            <section class="detail-container" id="roadmap-detail-container"></section>`;
+        const listEl = document.getElementById('roadmap-list');
+        (collaborator.roadmaps || []).forEach(roadmap => {
+            const li = document.createElement('li');
+            li.textContent = roadmap.period;
+            li.dataset.roadmapId = roadmap.id;
+            if (roadmap.id === collaborator.activeRoadmapId) li.classList.add('active');
+            li.addEventListener('click', () => { collaborator.activeRoadmapId = roadmap.id; render(); });
+            listEl.appendChild(li);
         });
-        
-        const addMissionSection = document.createElement('div');
-        addMissionSection.id = 'add-mission-section';
-        addMissionSection.innerHTML = `<button id="add-mission-btn">+ Ajouter une Mission</button>`;
-        missionsViewEl.appendChild(addMissionSection);
-
-        document.getElementById('add-mission-btn').addEventListener('click', handleAddMission);
+        const roadmap = (collaborator.roadmaps || []).find(r => r.id === collaborator.activeRoadmapId);
+        const detailEl = document.getElementById('roadmap-detail-container');
+        if (!roadmap) { detailEl.innerHTML = '<div class="empty-state"><p>Sélectionnez une feuille de route.</p></div>'; return; }
+        const tasksHtml = (roadmap.priorityTasks || []).map(createTaskElement).join('');
+        detailEl.innerHTML = `<div class="roadmap-grid"><div class="detail-field half"><label>Période</label><input type="text" data-field="period" value="${roadmap.period || ''}"></div><div class="detail-field half"><label>Prochaine rencontre</label><input type="text" data-field="nextMeeting" value="${roadmap.nextMeeting || ''}"></div><div class="detail-field full"><label>Objectifs principaux</label><textarea data-field="mainObjectives">${roadmap.mainObjectives || ''}</textarea></div><div class="detail-field full"><label>Tâches prioritaires</label><ul class="task-list">${tasksHtml}</ul><form id="add-task-form"><input type="text" id="new-task-input" placeholder="Nouvelle tâche..." required><button type="submit">+</button></form></div><div class="detail-field full"><label>Rendez-vous / réunions importantes</label><textarea data-field="meetings">${roadmap.meetings || ''}</textarea></div><div class="detail-field full"><label>Suivi des actions précédentes</label><textarea data-field="followUp">${roadmap.followUp || ''}</textarea></div><div class="detail-field full"><label>Observations / ajustements à prévoir</label><textarea data-field="observations">${roadmap.observations || ''}</textarea></div></div>`;
+        attachRoadmapListeners(roadmap);
     }
     
-    function renderCRs() {
-        // This function remains largely the same as before, just adapted for collaborators
-        const crListEl = document.getElementById('cr-list');
-        const crDetailContainer = document.getElementById('cr-detail-container');
-        const activeCollaborator = state.collaborators[state.activeCollaboratorId];
-        
-        crListEl.innerHTML = '';
-        activeCollaborator.crs.forEach(cr => {
+    function renderCRsView(collaborator) { 
+        const container = document.getElementById('cr-view');
+        container.innerHTML = `
+            <aside class="sidebar-container">
+                <h3>Historique</h3>
+                <ul class="sidebar-list" id="cr-list"></ul>
+                <button class="add-item-btn" id="add-cr-btn">+ Nouveau CR</button>
+            </aside>
+            <section class="detail-container" id="cr-detail-container"></section>`;
+        const listEl = document.getElementById('cr-list');
+        (collaborator.crs || []).forEach(cr => {
             const li = document.createElement('li');
             li.textContent = `CR du ${new Date(cr.date).toLocaleDateString('fr-FR')}`;
             li.dataset.crId = cr.id;
-            if (cr.id === state.activeCrId) li.classList.add('active');
-            li.addEventListener('click', () => { state.activeCrId = cr.id; renderCRs(); });
-            crListEl.appendChild(li);
+            if (cr.id === collaborator.activeCrId) li.classList.add('active');
+            li.addEventListener('click', () => { collaborator.activeCrId = cr.id; render(); });
+            listEl.appendChild(li);
+        });
+        const cr = (collaborator.crs || []).find(c => c.id === collaborator.activeCrId);
+        const detailEl = document.getElementById('cr-detail-container');
+        if (!cr) { detailEl.innerHTML = '<div class="empty-state"><p>Sélectionnez un compte-rendu.</p></div>'; return; }
+        const decisionsHtml = (cr.decisions || []).map((d, i) => `<tr data-decision-index="${i}"><td><input type="text" data-field="decision" value="${d.decision || ''}"></td><td><input type="text" data-field="owner" value="${d.owner || ''}"></td><td><input type="date" data-field="dueDate" value="${d.dueDate || ''}"></td><td><span class="delete-row-btn" title="Supprimer">&times;</span></td></tr>`).join('');
+        detailEl.innerHTML = `<div class="roadmap-grid"><div class="detail-field half"><label>Date</label><input type="date" data-field="date" value="${cr.date}"></div><div class="detail-field half"><label>Animé par</label><input type="text" data-field="animator" value="${cr.animator || ''}"></div><div class="detail-field half"><label>Présents</label><textarea data-field="attendees">${cr.attendees || ''}</textarea></div><div class="detail-field half"><label>Absents</label><textarea data-field="absentees">${cr.absentees || ''}</textarea></div><div class="detail-field full"><label>Points abordés</label><textarea data-field="discussion">${cr.discussion || ''}</textarea></div><div class="detail-field full"><label>Relevé de décisions</label><table id="decision-table"><thead><tr><th>Décision</th><th>Porteur</th><th>Échéance</th><th></th></tr></thead><tbody>${decisionsHtml}</tbody></table><button id="add-decision-btn" class="add-item-btn" style="width:auto; margin-top:10px;">+ Ajouter décision</button></div><div class="detail-field full"><label>Questions nécessitant une réponse</label><textarea data-field="questions">${cr.questions || ''}</textarea></div></div>`;
+        attachCRListeners(cr);
+    }
+
+    function renderProposalsView(collaborator) {
+        const container = document.getElementById('proposals-view');
+        container.innerHTML = `
+            <aside class="sidebar-container">
+                <h3>Propositions</h3>
+                <div style="padding: 0 0 10px 0;">
+                  <label for="filter-status">Filtrer:</label>
+                  <select id="filter-status" style="width:100%; padding: 5px; border-radius: 4px; border: 1px solid var(--border-color);">
+                      <option value="all">Toutes</option>
+                      <option value="En évaluation">En évaluation</option>
+                      <option value="Accepté">Accepté</option>
+                      <option value="Refusé">Refusé</option>
+                  </select>
+                </div>
+                <ul class="sidebar-list" id="proposal-list"></ul>
+                <button class="add-item-btn" id="add-proposal-btn">+ Nouvelle Proposition</button>
+            </aside>
+            <section class="detail-container" id="proposal-detail-container"></section>`;
+        
+        const listEl = document.getElementById('proposal-list');
+        const filterEl = document.getElementById('filter-status');
+        filterEl.value = collaborator.proposalFilter || 'all';
+
+        const filteredProposals = Object.values(collaborator.proposals || {}).filter(p => {
+            return filterEl.value === 'all' || p.status === filterEl.value;
+        });
+        filteredProposals.sort((a, b) => (calculateRawScore(b) - calculateRawScore(a)));
+
+        filteredProposals.forEach(p => {
+            const li = document.createElement('li');
+            li.dataset.proposalId = p.id;
+            if (p.id === collaborator.activeProposalId) li.classList.add('active');
+            const displayScore = getDisplayScore(calculateRawScore(p));
+            const statusClass = p.status.replace(' ', '-').toLowerCase();
+            li.innerHTML = `<div class="proposal-item-header"><span>${p.name}</span><span class="proposal-score">${displayScore.toFixed(1)}/20</span></div><div class="proposal-item-details"><span>${p.typology}</span> | <span class="status-badge ${statusClass === 'en-évaluation' ? 'eval' : statusClass}">${p.status}</span></div>`;
+            li.addEventListener('click', () => { collaborator.activeProposalId = p.id; render(); });
+            listEl.appendChild(li);
         });
 
-        const activeCr = activeCollaborator.crs.find(cr => cr.id === state.activeCrId);
-        if (activeCr) {
-            crDetailContainer.innerHTML = createCrDetailHtml(activeCr);
-            attachCrDetailEventListeners(activeCr);
-        } else {
-            crDetailContainer.innerHTML = '<div class="empty-state"><p>Sélectionnez un compte-rendu ou créez-en un nouveau.</p></div>';
+        const proposal = (collaborator.proposals || {})[collaborator.activeProposalId];
+        const detailEl = document.getElementById('proposal-detail-container');
+        if (!proposal) {
+            detailEl.innerHTML = '<div class="empty-state"><p>Sélectionnez une proposition pour l\'évaluer.</p></div>';
+            return;
         }
-    }
 
-    // --- Element Creation ---
-    function createMissionCardElement(mission) {
-        const card = document.createElement('div');
-        card.className = 'mission-card';
-        card.dataset.missionId = mission.id;
+        const criteriaHtml = PROPOSAL_CRITERIA.scoring.map(crit => {
+            const scoreData = proposal.criteria[crit.key] || {s: 0, c: ''};
+            return `<div class="criterion"><div class="criterion-header"><label for="range-${crit.key}">${crit.label}</label><div class="criterion-score"><input type="range" id="range-${crit.key}" data-criterion="${crit.key}" min="0" max="2" step="0.5" value="${scoreData.s}"><span>${Number(scoreData.s).toFixed(1)}</span></div></div><textarea class="criterion-comment" data-criterion="${crit.key}" placeholder="Justification...">${scoreData.c}</textarea></div>`;
+        }).join('');
+        const finalCritData = proposal.criteria[PROPOSAL_CRITERIA.final_comment.key] || {s:0, c:''};
+        const displayScore = getDisplayScore(calculateRawScore(proposal));
 
-        const tasksByStatus = { todo: [], inprogress: [], done: [], blocked: [] };
-        const statusMap = { "À faire": 'todo', "En cours": 'inprogress', "Terminé": 'done', "Bloqué": 'blocked' };
-        mission.tasks.forEach(task => {
-            tasksByStatus[statusMap[task.status]].push(task);
-        });
-
-        card.innerHTML = `
-            <div class="mission-header">
-                <h3>${mission.title}</h3>
-                <div class="mission-header-actions">
-                    <button class="edit-mission-btn" title="Modifier la mission">✏️</button>
-                    <button class="delete-mission-btn" title="Supprimer la mission">🗑️</button>
-                </div>
+        detailEl.innerHTML = `
+            <div class="detail-header"><h2>${proposal.name}</h2><p>${proposal.typology} | Partenaires: ${proposal.partners}</p></div>
+            <div class="info-grid">
+                <div class="info-item"><h4>Deadline</h4><p>${proposal.deadline || 'N/A'}</p></div>
+                <div class="info-item"><h4>Période</h4><p>${proposal.period || 'N/A'}</p></div>
+                <div class="info-item" style="grid-column: span 2;"><h4>Attendus pour la ML</h4><p>${proposal.expected || 'Non défini'}</p></div>
             </div>
-            <div class="mission-content">
-                <div class="task-column">
-                    <h4>À Faire</h4>
-                    <ul class="task-list todo-list">${tasksByStatus.todo.map(t => createTaskHtml(t)).join('')}</ul>
+            <h3>Évaluation des critères</h3>
+            ${criteriaHtml}
+            <div class="summary-section">
+                <h3>Synthèse & Décision</h3>
+                <div class="criterion">
+                    <label>${PROPOSAL_CRITERIA.final_comment.label}</label>
+                    <textarea class="criterion-comment" data-criterion="${PROPOSAL_CRITERIA.final_comment.key}" placeholder="Avis final du référent...">${finalCritData.c}</textarea>
                 </div>
-                <div class="task-column">
-                    <h4>En Cours</h4>
-                    <ul class="task-list inprogress-list">${tasksByStatus.inprogress.map(t => createTaskHtml(t)).join('')}</ul>
+                <div class="summary-grid">
+                    <div class="total-score"><h3>Score Total</h3><p>${displayScore.toFixed(1)} / 20</p></div>
+                    <div class="decision-actions">
+                        <button class="btn-eval" data-status="En évaluation">En évaluation</button>
+                        <button class="btn-accept" data-status="Accepté">Accepter</button>
+                        <button class="btn-refuse" data-status="Refusé">Refuser</button>
+                    </div>
                 </div>
-                <div class="task-column">
-                    <h4>Bloqué</h4>
-                    <ul class="task-list blocked-list">${tasksByStatus.blocked.map(t => createTaskHtml(t)).join('')}</ul>
-                </div>
-                 <div class="task-column">
-                    <h4>Terminé</h4>
-                    <ul class="task-list done-list">${tasksByStatus.done.map(t => createTaskHtml(t)).join('')}</ul>
-                </div>
-            </div>
-            <form class="add-task-form">
-                <input type="text" class="new-task-input" placeholder="Nouvelle tâche pour cette mission..." required>
-                <button type="submit" class="add-task-btn">Ajouter</button>
-            </form>
-        `;
-        // Attach event listeners for this specific card
-        card.addEventListener('click', handleCardClick);
-        card.addEventListener('change', handleCardChange);
-        card.addEventListener('submit', handleCardSubmit);
-        return card;
-    }
-
-    function createTaskHtml(task) {
-        const statusClass = task.status.toLowerCase().replace(/[^a-z]/g, '');
-        return `
-            <li class="task status-${statusClass}" data-task-id="${task.id}">
-                <span>${task.text}</span>
-                <div class="task-controls">
-                    <select class="task-status">
-                        <option value="À faire" ${task.status === 'À faire' ? 'selected' : ''}>À faire</option>
-                        <option value="En cours" ${task.status === 'En cours' ? 'selected' : ''}>En cours</option>
-                        <option value="Bloqué" ${task.status === 'Bloqué' ? 'selected' : ''}>Bloqué</option>
-                        <option value="Terminé" ${task.status === 'Terminé' ? 'selected' : ''}>Terminé</option>
-                    </select>
-                    <button class="delete-task-btn" title="Supprimer la tâche">&times;</button>
-                </div>
-            </li>
-        `;
+            </div>`;
+        attachProposalListeners(proposal);
     }
     
-    // --- Event Handlers (Delegated on Mission Card) ---
-    function handleCardClick(event) {
-        const missionId = event.currentTarget.dataset.missionId;
-        const activeCollaborator = state.collaborators[state.activeCollaboratorId];
-        const mission = activeCollaborator.missions.find(m => m.id === missionId);
-
-        if (event.target.classList.contains('delete-task-btn')) {
-            const taskId = event.target.closest('.task').dataset.taskId;
-            const task = mission.tasks.find(t => t.id === taskId);
-            if (confirm(`Voulez-vous vraiment supprimer la tâche "${task.text}" ?`)) {
-                mission.tasks = mission.tasks.filter(t => t.id !== taskId);
+    // --- Element & Listener Helpers ---
+    function createTaskElement(task) { return `<li class="task status-${task.status.toLowerCase().replace(/[^a-z]/g, '')}" data-task-id="${task.id}"><span>${task.text}</span><div class="task-controls"><select class="task-status"><option value="À faire" ${task.status === 'À faire' ? 'selected' : ''}>À faire</option><option value="En cours" ${task.status === 'En cours' ? 'selected' : ''}>En cours</option><option value="Terminé" ${task.status === 'Terminé' ? 'selected' : ''}>Terminé</option><option value="Bloqué" ${task.status === 'Bloqué' ? 'selected' : ''}>Bloqué</option></select><button class="delete-task-btn" title="Supprimer">&times;</button></div></li>`; }
+    
+    function attachRoadmapListeners(roadmap) {
+        const container = document.getElementById('roadmap-detail-container');
+        container.addEventListener('change', e => {
+            const field = e.target.dataset.field;
+            if (field) { roadmap[field] = e.target.value; if(field === 'period') render(); saveState(); }
+            if (e.target.classList.contains('task-status')) {
+                const taskId = e.target.closest('.task').dataset.taskId;
+                roadmap.priorityTasks.find(t => t.id === taskId).status = e.target.value;
                 render();
             }
-        } else if (event.target.classList.contains('delete-mission-btn')) {
-            if (confirm(`Voulez-vous vraiment supprimer la mission "${mission.title}" ?`)) {
-                activeCollaborator.missions = activeCollaborator.missions.filter(m => m.id !== missionId);
+        });
+        container.addEventListener('click', e => {
+            if (e.target.classList.contains('delete-task-btn')) {
+                const taskId = e.target.closest('.task').dataset.taskId;
+                roadmap.priorityTasks = roadmap.priorityTasks.filter(t => t.id !== taskId);
                 render();
             }
-        } else if (event.target.classList.contains('edit-mission-btn')) {
-            const newTitle = prompt("Nouveau nom pour la mission :", mission.title);
-            if (newTitle && newTitle.trim() !== '') {
-                mission.title = newTitle.trim();
-                render();
-            }
-        }
-    }
-
-    function handleCardChange(event) {
-        if (event.target.classList.contains('task-status')) {
-            const missionId = event.currentTarget.dataset.missionId;
-            const taskId = event.target.closest('.task').dataset.taskId;
-            const mission = state.collaborators[state.activeCollaboratorId].missions.find(m => m.id === missionId);
-            const task = mission.tasks.find(t => t.id === taskId);
-            task.status = event.target.value;
-            render();
-        }
-    }
-
-    function handleCardSubmit(event) {
-        event.preventDefault();
-        if (event.target.classList.contains('add-task-form')) {
-            const missionId = event.currentTarget.dataset.missionId;
-            const input = event.target.querySelector('.new-task-input');
-            const taskText = input.value.trim();
-            if (taskText) {
-                const mission = state.collaborators[state.activeCollaboratorId].missions.find(m => m.id === missionId);
-                const newTask = { id: `task-${Date.now()}`, text: taskText, status: 'À faire' };
-                mission.tasks.push(newTask);
+        });
+        container.querySelector('#add-task-form').addEventListener('submit', e => {
+            e.preventDefault();
+            const input = e.target.querySelector('input');
+            if (input.value.trim()) {
+                roadmap.priorityTasks.push({ id: `task-${Date.now()}`, text: input.value.trim(), status: 'À faire' });
                 input.value = '';
                 render();
             }
-        }
-    }
-    
-    function handleAddMission() {
-        const title = prompt("Titre de la nouvelle mission :");
-        if (title && title.trim() !== '') {
-            const newMission = {
-                id: `mission-${Date.now()}`,
-                title: title.trim(),
-                tasks: []
-            };
-            state.collaborators[state.activeCollaboratorId].missions.push(newMission);
-            render();
-        }
-    }
-
-    // --- Global Event Listeners ---
-    addCollaboratorBtn.addEventListener('click', () => {
-        const name = prompt("Nom du nouveau collaborateur :");
-        if (!name || name.trim() === '') return;
-
-        const newCollabId = `collab-${Date.now()}`;
-        state.collaborators[newCollabId] = {
-            id: newCollabId,
-            name: name.trim(),
-            missions: [],
-            crs: []
-        };
-        state.activeCollaboratorId = newCollabId;
-        state.activeView = 'missions-view';
-        render();
-    });
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            state.activeView = tab.dataset.view;
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            renderActiveView();
-            saveState();
         });
-    });
+    }
 
-    // --- CR Logic (mostly unchanged, just aliased for clarity) ---
-    const createCrDetailHtml = (cr) => { /* HTML generation code from previous version */ 
-        let decisionsHtml = cr.decisions.map((d, index) => `
-            <tr data-decision-index="${index}">
-                <td><input type="text" value="${d.decision}" data-field="decision"></td>
-                <td><input type="text" value="${d.owner}" data-field="owner"></td>
-                <td><input type="date" value="${d.dueDate}" data-field="dueDate"></td>
-                <td><span class="delete-row-btn" title="Supprimer la ligne">&times;</span></td>
-            </tr>
-        `).join('');
-        return `
-            <div class="cr-field"><label for="cr-date">Date du CR</label><input type="date" id="cr-date" value="${new Date(cr.date).toISOString().split('T')[0]}"></div>
-            <div class="cr-field"><label for="cr-participants">Participants</label><input type="text" id="cr-participants" value="${cr.participants}"></div>
-            <div class="cr-field"><label for="cr-notes">Notes / Discussions</label><textarea id="cr-notes">${cr.notes}</textarea></div>
-            <div class="cr-field"><label>Relevé de Décisions</label><table id="decision-table"><thead><tr><th>Décision</th><th>Porteur</th><th>Échéance</th><th></th></tr></thead><tbody>${decisionsHtml}</tbody></table><button id="add-decision-btn" style="margin-top:10px;">+ Ajouter une décision</button></div>
-            <button id="delete-cr-btn" style="background-color: var(--status-blocked); color:white; border:none; padding: 8px 12px; border-radius: 5px; cursor:pointer;">Supprimer ce CR</button>
-        `;
-    };
-    const attachCrDetailEventListeners = (cr) => { /* Event listener attachment from previous version */ 
+    function attachCRListeners(cr) {
         const container = document.getElementById('cr-detail-container');
-        container.querySelector('#cr-date').addEventListener('change', (e) => { cr.date = new Date(e.target.value).getTime(); saveState(); renderCRs(); });
-        container.querySelector('#cr-participants').addEventListener('blur', (e) => { cr.participants = e.target.value; saveState(); });
-        container.querySelector('#cr-notes').addEventListener('blur', (e) => { cr.notes = e.target.value; saveState(); });
-        const table = container.querySelector('#decision-table');
-        table.addEventListener('change', (e) => {
-            if (e.target.tagName === 'INPUT') {
-                const tr = e.target.closest('tr');
-                const index = tr.dataset.decisionIndex;
-                const field = e.target.dataset.field;
+        container.addEventListener('change', e => {
+            const field = e.target.dataset.field;
+            if (field && e.target.closest('tr') === null) {
+                cr[field] = e.target.value;
+                if(field === 'date') render();
+                saveState();
+            } else if (field) {
+                const index = e.target.closest('tr').dataset.decisionIndex;
                 cr.decisions[index][field] = e.target.value;
                 saveState();
             }
         });
-        table.addEventListener('click', (e) => {
-            if (e.target.classList.contains('delete-row-btn')) {
-                const tr = e.target.closest('tr');
-                const index = tr.dataset.decisionIndex;
-                cr.decisions.splice(index, 1);
-                renderCRs();
-                saveState();
+        container.addEventListener('click', e => {
+            if (e.target.id === 'add-decision-btn') {
+                cr.decisions = cr.decisions || [];
+                cr.decisions.push({ decision: '', owner: '', dueDate: '' });
+                render();
             }
-        });
-        container.querySelector('#add-decision-btn').addEventListener('click', () => { cr.decisions.push({ decision: '', owner: '', dueDate: '' }); renderCRs(); saveState(); });
-        container.querySelector('#delete-cr-btn').addEventListener('click', () => {
-            if(confirm('Voulez-vous vraiment supprimer ce compte-rendu ?')) {
-                const collab = state.collaborators[state.activeCollaboratorId];
-                collab.crs = collab.crs.filter(c => c.id !== cr.id);
-                state.activeCrId = null;
+            if (e.target.classList.contains('delete-row-btn')) {
+                const index = e.target.closest('tr').dataset.decisionIndex;
+                cr.decisions.splice(index, 1);
                 render();
             }
         });
-    };
-    document.getElementById('cr-view').addEventListener('click', (e) => {
+    }
+
+    function attachProposalListeners(proposal) {
+        const container = document.getElementById('proposal-detail-container');
+        container.addEventListener('input', e => {
+            if (e.target.type === 'range') {
+                proposal.criteria[e.target.dataset.criterion].s = parseFloat(e.target.value);
+                render();
+            }
+        });
+        container.addEventListener('change', e => {
+            if (e.target.classList.contains('criterion-comment')) {
+                proposal.criteria[e.target.dataset.criterion].c = e.target.value;
+                saveState();
+            }
+        });
+        container.querySelector('.decision-actions').addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') {
+                proposal.status = e.target.dataset.status;
+                render();
+            }
+        });
+    }
+
+    // --- Global Event Listeners ---
+    document.getElementById('add-collaborator-btn').addEventListener('click', () => {
+        const name = prompt("Nom du nouveau collaborateur :");
+        if (!name) return;
+        const newId = `collab-${Date.now()}`;
+        state.collaborators[newId] = { id: newId, name: name.trim(), roadmaps: [], crs: [], proposals: {} };
+        state.activeCollaboratorId = newId;
+        render();
+    });
+
+    document.querySelector('.tabs').addEventListener('click', e => { if (e.target.classList.contains('tab')) { state.activeView = e.target.dataset.view; render(); } });
+    
+    document.getElementById('main-view-container').addEventListener('click', e => {
+        const activeCollaborator = state.collaborators[state.activeCollaboratorId];
+        if (!activeCollaborator) return;
+        if (e.target.id === 'add-roadmap-btn') {
+            const period = prompt("Période de la feuille de route (ex: Semaine 29):");
+            if (!period) return;
+            const newRoadmap = { id: `roadmap-${Date.now()}`, period: period, priorityTasks: [] };
+            activeCollaborator.roadmaps = activeCollaborator.roadmaps || [];
+            activeCollaborator.roadmaps.push(newRoadmap);
+            activeCollaborator.activeRoadmapId = newRoadmap.id;
+            render();
+        }
         if (e.target.id === 'add-cr-btn') {
-            const collab = state.collaborators[state.activeCollaboratorId];
-            const newCr = { id: `cr-${Date.now()}`, date: Date.now(), participants: collab.name || '', notes: '', decisions: [] };
-            collab.crs.push(newCr);
-            collab.crs.sort((a,b) => b.date - a.date);
-            state.activeCrId = newCr.id;
+            const newCr = { id: `cr-${Date.now()}`, date: new Date().toISOString().split('T')[0], decisions: [] };
+            activeCollaborator.crs = activeCollaborator.crs || [];
+            activeCollaborator.crs.push(newCr);
+            activeCollaborator.crs.sort((a,b) => new Date(b.date) - new Date(a.date));
+            activeCollaborator.activeCrId = newCr.id;
+            render();
+        }
+        if (e.target.id === 'add-proposal-btn') {
+            const name = prompt("Nom de la nouvelle proposition :");
+            if (!name) return;
+            const newId = `prop-${Date.now()}`;
+            activeCollaborator.proposals[newId] = {
+                id: newId, name: name.trim(), status: "En évaluation",
+                criteria: [...PROPOSAL_CRITERIA.scoring, PROPOSAL_CRITERIA.final_comment].reduce((acc, crit) => {
+                    acc[crit.key] = { s: 0, c: '' }; return acc;
+                }, {})
+            };
+            activeCollaborator.activeProposalId = newId;
             render();
         }
     });
     
+    document.getElementById('main-view-container').addEventListener('change', e => {
+        if (e.target.id === 'filter-status') {
+            state.collaborators[state.activeCollaboratorId].proposalFilter = e.target.value;
+            render();
+        }
+    });
+
+    // --- Score Calculation ---
+    function calculateRawScore(proposal) { return PROPOSAL_CRITERIA.scoring.reduce((sum, crit) => sum + (Number(proposal.criteria[crit.key]?.s) || 0), 0); }
+    function getDisplayScore(rawScore) { const max = PROPOSAL_CRITERIA.scoring.length * 2; return max === 0 ? 0 : (rawScore / max) * 20; }
+
     function showView(viewId) {
-        views.forEach(v => v.classList.remove('active'));
-        document.getElementById(viewId)?.classList.add('active');
+        document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+        const viewEl = document.getElementById(viewId);
+        if (viewEl) viewEl.style.display = 'block';
         document.getElementById('view-switcher').style.display = (viewId === 'empty-state-view') ? 'none' : 'block';
     }
 
     // --- Initial Load ---
     loadState();
+    // Quick patch to ensure all collaborators have all modules
+    Object.values(state.collaborators).forEach(c => {
+        if (!c.roadmaps) c.roadmaps = [];
+        if (!c.proposals) c.proposals = {};
+        if (!c.crs) c.crs = [];
+    });
     render();
 });
+</script>
+
+</body>
+</html>
+
 </script>
 
 </body>
