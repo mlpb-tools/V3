@@ -115,6 +115,11 @@
         .btn-eval { background-color: var(--status-eval); }
         .btn-accept { background-color: var(--status-accepted); color: white; }
         .btn-refuse { background-color: var(--status-refused); color: white; }
+        #audio-recorder button { margin-right: 10px; padding: 8px 12px; border-radius: 5px; border: 1px solid var(--border-color); cursor: pointer; }
+        #audio-recorder button:disabled { opacity: 0.5; cursor: not-allowed; }
+        #recordings-list audio { width: 100%; margin-top: 10px; }
+        .recording-item { display: flex; align-items: center; justify-content: space-between; }
+        .delete-recording-btn { background: none; border: none; color: var(--status-refused); font-size: 1.2em; cursor: pointer; }
 
         /* --- Modal pour les outils d'analyse --- */
         .modal-overlay {
@@ -171,6 +176,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- State Management & Definitions ---
     let state = {};
+    let mediaRecorder;
+    let audioChunks = [];
 
     const PROPOSAL_CRITERIA = {
         scoring: [
@@ -330,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <section class="detail-container" id="cr-detail-container"></section>`;
 
         const listEl = document.getElementById('cr-list');
-        (collaborator.crs || []).forEach(cr => {
+        (collaborator.crs || []).sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(cr => {
             const li = document.createElement('li');
             li.textContent = `CR du ${new Date(cr.date).toLocaleDateString('fr-FR')}`;
             li.dataset.crId = cr.id;
@@ -347,6 +354,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const decisionsHtml = (cr.decisions || []).map((d, i) => `<tr data-decision-index="${i}"><td><input type="text" data-field="decision" value="${d.decision || ''}"></td><td><input type="text" data-field="owner" value="${d.owner || ''}"></td><td><input type="date" data-field="dueDate" value="${d.dueDate || ''}"></td><td><span class="delete-row-btn" title="Supprimer">&times;</span></td></tr>`).join('');
+        const recordingsHtml = (cr.recordings || []).map((rec, i) => `
+            <div class="recording-item" data-recording-index="${i}">
+                <audio controls src="${rec.data}"></audio>
+                <button class="delete-recording-btn" title="Supprimer l'enregistrement">&times;</button>
+            </div>`).join('');
+
         detailEl.innerHTML = `
             <div class="roadmap-grid">
                 <div class="detail-field half"><label>Date</label><input type="date" data-field="date" value="${cr.date}"></div>
@@ -358,6 +371,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <label>Relevé de décisions</label>
                     <table id="decision-table"><thead><tr><th>Décision</th><th>Porteur</th><th>Échéance</th><th></th></tr></thead><tbody>${decisionsHtml}</tbody></table>
                     <button id="add-decision-btn" class="add-item-btn" style="width:auto; margin-top:10px;">+ Ajouter décision</button>
+                </div>
+                <div class="detail-field full">
+                    <label>Enregistrements Audio</label>
+                    <div id="audio-recorder">
+                        <button id="record-btn">🎙️ Démarrer l'enregistrement</button>
+                        <button id="stop-btn" disabled>⏹️ Arrêter</button>
+                    </div>
+                    <div id="recordings-list">${recordingsHtml}</div>
                 </div>
                 <div class="detail-field full">
                     <label>Questions nécessitant une réponse <button class="analysis-btn" data-tool="7s" title="Analyse 7S de McKinsey">🧠</button></label>
@@ -562,7 +583,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 cr.decisions.splice(index, 1);
                 render();
             }
+            if (e.target.classList.contains('delete-recording-btn')) {
+                const index = e.target.closest('.recording-item').dataset.recordingIndex;
+                cr.recordings.splice(index, 1);
+                render();
+            }
         });
+
+        // Audio Recorder Logic
+        const recordBtn = container.querySelector('#record-btn');
+        const stopBtn = container.querySelector('#stop-btn');
+        recordBtn.onclick = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
+                audioChunks = [];
+                mediaRecorder.addEventListener("dataavailable", event => {
+                    audioChunks.push(event.data);
+                });
+                mediaRecorder.addEventListener("stop", () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = function() {
+                        const base64data = reader.result;
+                        cr.recordings = cr.recordings || [];
+                        cr.recordings.push({ data: base64data });
+                        render();
+                    }
+                    stream.getTracks().forEach(track => track.stop()); // Stop microphone access
+                });
+                recordBtn.disabled = true;
+                stopBtn.disabled = false;
+            } catch (err) {
+                console.error("Error accessing microphone:", err);
+                alert("Impossible d'accéder au microphone. Veuillez vérifier les autorisations de votre navigateur.");
+            }
+        };
+        stopBtn.onclick = () => {
+            mediaRecorder.stop();
+            recordBtn.disabled = false;
+            stopBtn.disabled = true;
+        };
     }
 
     function attachProposalListeners(proposal) {
@@ -612,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
             render();
         }
         if (e.target.id === 'add-cr-btn') {
-            const newCr = { id: `cr-${Date.now()}`, date: new Date().toISOString().split('T')[0], decisions: [] };
+            const newCr = { id: `cr-${Date.now()}`, date: new Date().toISOString().split('T')[0], decisions: [], recordings: [] };
             activeCollaborator.crs = activeCollaborator.crs || [];
             activeCollaborator.crs.push(newCr);
             activeCollaborator.crs.sort((a,b) => new Date(b.date) - new Date(a.date));
