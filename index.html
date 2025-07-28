@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -118,8 +119,9 @@
         #audio-recorder button { margin-right: 10px; padding: 8px 12px; border-radius: 5px; border: 1px solid var(--border-color); cursor: pointer; }
         #audio-recorder button:disabled { opacity: 0.5; cursor: not-allowed; }
         #recordings-list audio { width: 100%; margin-top: 10px; }
-        .recording-item { display: flex; align-items: center; justify-content: space-between; }
+        .recording-item { display: flex; align-items: center; justify-content: space-between; padding: 5px; border: 1px solid var(--border-color); border-radius: 5px; margin-top: 5px; }
         .delete-recording-btn { background: none; border: none; color: var(--status-refused); font-size: 1.2em; cursor: pointer; }
+        #generate-summary-btn { background-color: var(--header-color); color: white; }
 
         /* --- Modal pour les outils d'analyse --- */
         .modal-overlay {
@@ -357,7 +359,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const recordingsHtml = (cr.recordings || []).map((rec, i) => `
             <div class="recording-item" data-recording-index="${i}">
                 <audio controls src="${rec.data}"></audio>
-                <button class="delete-recording-btn" title="Supprimer l'enregistrement">&times;</button>
+                <div>
+                    <button class="generate-summary-btn" data-recording-index="${i}">Générer le résumé 🤖</button>
+                    <button class="delete-recording-btn" title="Supprimer l'enregistrement">&times;</button>
+                </div>
             </div>`).join('');
 
         detailEl.innerHTML = `
@@ -524,7 +529,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     render();
                 };
                 break;
-            // Other cases for '7s', 'level2', 'impact-effort' would go here
+            case 'generate-summary':
+                 content = `
+                    <h3>Générateur de Compte-Rendu</h3>
+                    <p>Pour simuler l'analyse par une IA, collez ci-dessous le texte de votre réunion (transcription de l'audio).</p>
+                    <textarea id="transcription-input" style="width: 98%; height: 200px;" placeholder="Collez la transcription ici..."></textarea>
+                    <button id="process-transcription-btn">Analyser et remplir le CR</button>`;
+                modalBody.innerHTML = content;
+                document.getElementById('process-transcription-btn').onclick = () => {
+                    const text = document.getElementById('transcription-input').value;
+                    // Simple "AI" simulation
+                    context.cr.discussion = `Résumé basé sur la transcription:\n${text.substring(0, 400)}...`;
+                    
+                    const decisionKeywords = ['décidé', 'il a été convenu', 'action', 'prochaine étape'];
+                    const lines = text.split('\n');
+                    const newDecisions = [];
+                    lines.forEach(line => {
+                        if (decisionKeywords.some(kw => line.toLowerCase().includes(kw))) {
+                            newDecisions.push({ decision: line, owner: 'À définir', dueDate: '' });
+                        }
+                    });
+                    if(newDecisions.length > 0) {
+                        context.cr.decisions = (context.cr.decisions || []).concat(newDecisions);
+                    }
+                    
+                    modal.style.display = 'none';
+                    render();
+                };
+                break;
         }
     }
 
@@ -588,6 +620,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 cr.recordings.splice(index, 1);
                 render();
             }
+            if (e.target.classList.contains('generate-summary-btn')) {
+                openAnalysisModal('generate-summary', { cr: cr });
+            }
         });
 
         // Audio Recorder Logic
@@ -612,7 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         cr.recordings.push({ data: base64data });
                         render();
                     }
-                    stream.getTracks().forEach(track => track.stop()); // Stop microphone access
+                    stream.getTracks().forEach(track => track.stop());
                 });
                 recordBtn.disabled = true;
                 stopBtn.disabled = false;
@@ -728,11 +763,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     render();
 });
-</script>
-
-</body>
-</html>
-
 </script>
 
 </body>
