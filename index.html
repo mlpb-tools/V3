@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -66,17 +66,16 @@
         .detail-field label { display: block; font-weight: 600; margin-bottom: 5px; }
         .detail-field input, .detail-field textarea { width: 98%; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; font-family: inherit; font-size: 1em; }
         .detail-field textarea { min-height: 80px; resize: vertical; }
-        .analysis-btn { margin-left: 10px; background: none; border: none; cursor: pointer; font-size: 1.2em; }
         
         /* --- Styles spécifiques (Feuille de Route, CR, Propositions) --- */
         .roadmap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .roadmap-grid .detail-field.full { grid-column: span 2; }
         .task-list { list-style: none; padding: 0; margin: 0; }
         .task { background-color: #fdfdfd; border: 1px solid var(--border-color); padding: 10px; margin-bottom: 8px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .task.status-todo { border-left: 4px solid var(--status-todo); }
-        .task.status-inprogress { border-left: 4px solid var(--status-inprogress); }
-        .task.status-done { border-left: 4px solid var(--status-done); }
-        .task.status-blocked { border-left: 4px solid var(--status-blocked); }
+        .task.status-a-faire { border-left: 4px solid var(--status-todo); }
+        .task.status-en-cours { border-left: 4px solid var(--status-inprogress); }
+        .task.status-termine { border-left: 4px solid var(--status-done); }
+        .task.status-bloque { border-left: 4px solid var(--status-blocked); }
         .task-controls { display: flex; align-items: center; gap: 10px; }
         .task-status { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); }
         .delete-task-btn { background: none; border: none; cursor: pointer; color: #999; font-size: 1.5em; line-height: 1; }
@@ -88,6 +87,27 @@
         #decision-table th { background-color: #f8f9fa; }
         #decision-table input { width: 95%; border: none; }
         .delete-row-btn { cursor: pointer; color: var(--status-refused); }
+        .proposal-item-header { display: flex; justify-content: space-between; font-weight: 600; color: var(--text-dark); }
+        .proposal-item-details { font-size: 0.85em; color: var(--text-light); margin-top: 4px; }
+        .proposal-score { font-size: 1.1em; font-weight: bold; }
+        .status-badge { padding: 3px 8px; border-radius: 12px; font-size: 0.8em; color: white; }
+        .status-badge.en-evaluation { background-color: var(--status-eval); }
+        .status-badge.accepte { background-color: var(--status-accepted); }
+        .status-badge.refuse { background-color: var(--status-refused); }
+        .criterion { background-color: var(--main-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 15px; }
+        .criterion-header { display: flex; justify-content: space-between; align-items: center; }
+        .criterion-header label { font-weight: 600; flex-grow: 1; font-size: 0.9em; }
+        .criterion-score { display: flex; align-items: center; gap: 10px; }
+        .criterion-score input[type="range"] { width: 120px; }
+        .criterion-score span { font-weight: bold; width: 40px; text-align: center; }
+        .summary-section { margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px; }
+        .summary-grid { display: flex; justify-content: space-between; align-items: center; }
+        .total-score h3 { margin: 0; font-size: 1.2em; }
+        .total-score p { margin: 5px 0 0; font-size: 2.5em; font-weight: bold; color: var(--header-color); }
+        .decision-actions button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 600; margin-left: 10px; }
+        .btn-eval { background-color: var(--status-eval); }
+        .btn-accept { background-color: var(--status-accepted); color: white; }
+        .btn-refuse { background-color: var(--status-refused); color: white; }
         
         /* --- Styles Enregistreur Intelligent --- */
         .loader {
@@ -103,7 +123,9 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* --- Modal pour les outils d'analyse --- */
+        .empty-state { text-align: center; padding: 50px; color: var(--text-light); }
+        
+        /* --- Modal --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.6); z-index: 1000;
@@ -111,15 +133,9 @@
         }
         .modal-content {
             background: white; padding: 30px; border-radius: 8px;
-            width: 90%; max-width: 800px; max-height: 90vh;
-            overflow-y: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 90%; max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
-        .modal-content h3 { margin-top: 0; }
-        .modal-close { float: right; font-size: 1.5em; cursor: pointer; border: none; background: none; }
-        .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .analysis-grid textarea { width: 95%; min-height: 100px; }
-
-        .empty-state { text-align: center; padding: 50px; color: var(--text-light); }
     </style>
 </head>
 <body>
@@ -145,12 +161,16 @@
             <div id="empty-state-view" class="view"></div>
         </div>
     </main>
-
-    <!-- Modal pour les outils d'analyse (conservé pour les autres vues) -->
-    <div id="analysis-modal" class="modal-overlay">
+    
+    <!-- Modal pour les entrées utilisateur -->
+    <div id="input-modal" class="modal-overlay">
         <div class="modal-content">
-            <button class="modal-close">&times;</button>
-            <div id="modal-body"></div>
+            <h3 id="input-modal-title" class="text-lg font-semibold mb-4"></h3>
+            <input type="text" id="input-modal-field" class="w-full p-2 border border-gray-300 rounded-md">
+            <div class="text-right mt-6">
+                <button id="input-modal-cancel" class="px-4 py-2 bg-gray-200 rounded-md mr-2">Annuler</button>
+                <button id="input-modal-ok" class="px-4 py-2 bg-blue-600 text-white rounded-md">OK</button>
+            </div>
         </div>
     </div>
 
@@ -165,6 +185,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let recognition;
     let isRecording = false;
     let finalTranscript = '';
+
+    const PROPOSAL_CRITERIA = {
+        scoring: [
+            { key: 'c1', label: '1. Alignement avec les missions' },
+            { key: 'c2', label: '2. Cohérence avec les axes stratégiques et le projet associatif' },
+            { key: 'c3', label: "3. Renforcement de l'identité de la ML" },
+            { key: 'c4', label: '4. Public cible' },
+            { key: 'c5', label: '5. Impact potentiel sur les jeunes' },
+            { key: 'c6', label: '6. Modalités pédagogiques, caractère innovant, participation des jeunes, support au diagnostic' },
+            { key: 'c7', label: "7. Nombre de bénéficiaires potentiels/ Potentiel d'extension à d'autres groupes" },
+            { key: 'c8', label: '8. Faisabilité RH nombre de salariés mobilisés, impact sur la charge de travail' },
+            { key: 'c9', label: '9. Faisabilité financière cout total estimé Potentiel de financement externe' },
+        ],
+        final_comment: { key: 'c10', label: '10. Avis référent interne' }
+    };
 
     function saveState() {
         localStorage.setItem('synchroBoardStrategicState', JSON.stringify(state));
@@ -197,6 +232,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewEl = document.getElementById(viewId);
         if (viewEl) viewEl.style.display = 'block';
         document.getElementById('view-switcher').style.display = (viewId === 'empty-state-view') ? 'none' : 'block';
+    }
+
+    function calculateRawScore(proposal) { return PROPOSAL_CRITERIA.scoring.reduce((sum, crit) => sum + (Number(proposal.criteria[crit.key]?.s) || 0), 0); }
+    function getDisplayScore(rawScore) { const max = PROPOSAL_CRITERIA.scoring.length * 2; return max === 0 ? 0 : (rawScore / max) * 20; }
+    function createTaskElement(task) { 
+        const status = task.status || 'À faire';
+        const statusClass = status.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '');
+        return `<li class="task status-${statusClass}" data-task-id="${task.id}"><span>${task.text}</span><div class="task-controls"><select class="task-status"><option value="À faire" ${status === 'À faire' ? 'selected' : ''}>À faire</option><option value="En cours" ${status === 'En cours' ? 'selected' : ''}>En cours</option><option value="Terminé" ${status === 'Terminé' ? 'selected' : ''}>Terminé</option><option value="Bloqué" ${status === 'Bloqué' ? 'selected' : ''}>Bloqué</option></select><button class="delete-task-btn" title="Supprimer">&times;</button></div></li>`; 
     }
 
     // --- Main Render Functions ---
@@ -240,14 +283,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
         switch (state.activeView) {
             case 'roadmaps-view': renderRoadmapsView(activeCollaborator); break;
-            // case 'proposals-view': renderProposalsView(activeCollaborator); break; // Placeholder for brevity
+            case 'proposals-view': renderProposalsView(activeCollaborator); break;
             case 'cr-view': renderCRsView(activeCollaborator); break;
         }
     }
 
     // --- View-Specific Renderers ---
     function renderRoadmapsView(collaborator) {
-        // ... (Code de la vue Feuille de Route inchangé)
+        const container = document.getElementById('roadmaps-view');
+        container.innerHTML = `
+            <aside class="sidebar-container">
+                <h3>Périodes</h3>
+                <ul class="sidebar-list" id="roadmap-list"></ul>
+                <button class="add-item-btn" id="add-roadmap-btn">+ Nouvelle Feuille de Route</button>
+            </aside>
+            <section class="detail-container" id="roadmap-detail-container"></section>`;
+        
+        const listEl = document.getElementById('roadmap-list');
+        (collaborator.roadmaps || []).forEach(roadmap => {
+            const li = document.createElement('li');
+            li.textContent = roadmap.period;
+            li.dataset.roadmapId = roadmap.id;
+            if (roadmap.id === collaborator.activeRoadmapId) li.classList.add('active');
+            li.addEventListener('click', () => { collaborator.activeRoadmapId = roadmap.id; render(); });
+            listEl.appendChild(li);
+        });
+        
+        const roadmap = (collaborator.roadmaps || []).find(r => r.id === collaborator.activeRoadmapId);
+        const detailEl = document.getElementById('roadmap-detail-container');
+        if (!roadmap) {
+            detailEl.innerHTML = '<div class="empty-state"><p>Sélectionnez une feuille de route.</p></div>';
+            return;
+        }
+        
+        const tasksHtml = (roadmap.priorityTasks || []).map(createTaskElement).join('');
+        detailEl.innerHTML = `
+            <div class="roadmap-grid">
+                <div class="detail-field half"><label>Période</label><input type="text" data-field="period" value="${roadmap.period || ''}"></div>
+                <div class="detail-field half"><label>Prochaine rencontre</label><input type="text" data-field="nextMeeting" value="${roadmap.nextMeeting || ''}"></div>
+                <div class="detail-field full">
+                    <label>Objectifs principaux</label>
+                    <textarea data-field="mainObjectives">${roadmap.mainObjectives || ''}</textarea>
+                </div>
+                <div class="detail-field full">
+                    <label>Tâches prioritaires</label>
+                    <ul class="task-list">${tasksHtml}</ul>
+                    <form id="add-task-form"><input type="text" id="new-task-input" placeholder="Nouvelle tâche..." required><button type="submit" id="add-task-btn">+</button></form>
+                </div>
+                <div class="detail-field full"><label>Rendez-vous / réunions importantes</label><textarea data-field="meetings">${roadmap.meetings || ''}</textarea></div>
+                <div class="detail-field full"><label>Suivi des actions précédentes</label><textarea data-field="followUp">${roadmap.followUp || ''}</textarea></div>
+                <div class="detail-field full"><label>Observations / ajustements à prévoir</label><textarea data-field="observations">${roadmap.observations || ''}</textarea></div>
+            </div>`;
+        attachRoadmapListeners(roadmap);
     }
     
     function renderCRsView(collaborator) {
@@ -287,8 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="detail-field half"><label>Absents</label><textarea data-field="absentees">${cr.absentees || ''}</textarea></div>
             </div>
             
-            <!-- ENREGISTREUR INTELLIGENT INTÉGRÉ -->
-            <div class="w-full bg-white rounded-2xl space-y-6 mt-6">
+            <div class="w-full bg-white rounded-2xl space-y-6 mt-6 border-t pt-6">
                 <h3 class="text-xl font-semibold text-gray-700">Enregistreur Intelligent</h3>
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-4 p-4 bg-gray-50 rounded-xl">
                     <button id="recordButton" class="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
@@ -315,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div>
                         <div class="flex items-center justify-between gap-2 mb-2">
                             <h4 class="text-lg font-semibold text-gray-700">Compte Rendu IA</h4>
-                            <button id="summarizeButton" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-sm hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>Générer</button>
+                            <button id="summarizeButton" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-sm hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" ${!cr.transcript ? 'disabled' : ''}>Générer</button>
                         </div>
                         <div id="summaryContainer" class="h-48 p-4 bg-gray-50 border border-gray-200 rounded-lg overflow-y-auto flex items-center justify-center">
                             <div id="summaryLoader" class="loader hidden"></div>
@@ -327,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="space-y-3 pt-4">
                     <div class="flex items-center justify-between">
                         <h4 class="text-lg font-semibold text-gray-700">Rapport d'Équipe Formaté</h4>
-                        <button id="teamReportButton" class="px-4 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow-sm hover:bg-purple-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">Créer le Rapport</button>
+                        <button id="teamReportButton" class="px-4 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow-sm hover:bg-purple-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" ${!cr.summary ? 'disabled' : ''}>Créer le Rapport</button>
                     </div>
                     <div id="teamReportContainer" class="h-64 p-4 bg-blue-50 border border-blue-200 rounded-lg overflow-y-auto flex items-center justify-center">
                         <div id="teamReportLoader" class="loader hidden"></div>
@@ -335,7 +421,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             </div>
-            <!-- FIN DE L'INTÉGRATION -->
             
             <div class="detail-field full mt-6">
                 <label>Relevé de décisions</label>
@@ -346,48 +431,170 @@ document.addEventListener('DOMContentLoaded', () => {
         attachCRListeners(cr);
     }
 
+    function renderProposalsView(collaborator) {
+        const container = document.getElementById('proposals-view');
+        container.innerHTML = `
+            <aside class="sidebar-container">
+                <h3>Propositions</h3>
+                <div style="padding: 0 0 10px 0;">
+                    <label for="filter-status">Filtrer:</label>
+                    <select id="filter-status" style="width:100%; padding: 5px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        <option value="all">Toutes</option>
+                        <option value="En évaluation">En évaluation</option>
+                        <option value="Accepté">Accepté</option>
+                        <option value="Refusé">Refusé</option>
+                    </select>
+                </div>
+                <ul class="sidebar-list" id="proposal-list"></ul>
+                <button class="add-item-btn" id="add-proposal-btn">+ Nouvelle Proposition</button>
+            </aside>
+            <section class="detail-container" id="proposal-detail-container"></section>`;
+        
+        const listEl = document.getElementById('proposal-list');
+        const filterEl = document.getElementById('filter-status');
+        filterEl.value = collaborator.proposalFilter || 'all';
+
+        const filteredProposals = Object.values(collaborator.proposals || {}).filter(p => {
+            return filterEl.value === 'all' || p.status === filterEl.value;
+        });
+        filteredProposals.sort((a, b) => (calculateRawScore(b) - calculateRawScore(a)));
+
+        filteredProposals.forEach(p => {
+            const li = document.createElement('li');
+            li.dataset.proposalId = p.id;
+            if (p.id === collaborator.activeProposalId) li.classList.add('active');
+            const displayScore = getDisplayScore(calculateRawScore(p));
+            const statusClass = (p.status || 'En évaluation').toLowerCase().replace('é', 'e').replace(/\s+/g, '-');
+            li.innerHTML = `<div class="proposal-item-header"><span>${p.name}</span><span class="proposal-score">${displayScore.toFixed(1)}/20</span></div><div class="proposal-item-details"><span>${p.typology || ''}</span> | <span class="status-badge ${statusClass}">${p.status}</span></div>`;
+            li.addEventListener('click', () => { collaborator.activeProposalId = p.id; render(); });
+            listEl.appendChild(li);
+        });
+
+        const proposal = (collaborator.proposals || {})[collaborator.activeProposalId];
+        const detailEl = document.getElementById('proposal-detail-container');
+        if (!proposal) {
+            detailEl.innerHTML = '<div class="empty-state"><p>Sélectionnez une proposition pour l\'évaluer.</p></div>';
+            return;
+        }
+
+        const criteriaHtml = PROPOSAL_CRITERIA.scoring.map(crit => {
+            const scoreData = proposal.criteria[crit.key] || {s: 0, c: ''};
+            return `<div class="criterion">
+                <div class="criterion-header">
+                    <label>${crit.label}</label>
+                    <div class="criterion-score"><input type="range" data-criterion="${crit.key}" min="0" max="2" step="0.5" value="${scoreData.s}"><span>${Number(scoreData.s).toFixed(1)}</span></div>
+                </div>
+            </div>`;
+        }).join('');
+        const finalCritData = proposal.criteria[PROPOSAL_CRITERIA.final_comment.key] || {c:''};
+        const displayScore = getDisplayScore(calculateRawScore(proposal));
+
+        detailEl.innerHTML = `
+            <div class="detail-field"><label>Nom de la proposition</label><input type="text" data-field="name" value="${proposal.name || ''}"></div>
+            <div class="detail-field"><label>Typologie</label><input type="text" data-field="typology" value="${proposal.typology || ''}"></div>
+            <h3>Évaluation des critères</h3>
+            ${criteriaHtml}
+            <div class="summary-section">
+                <h3>Synthèse & Décision</h3>
+                <div class="criterion">
+                    <label>${PROPOSAL_CRITERIA.final_comment.label}</label>
+                    <textarea class="criterion-comment" data-criterion="${PROPOSAL_CRITERIA.final_comment.key}" placeholder="Avis final du référent...">${finalCritData.c}</textarea>
+                </div>
+                <div class="summary-grid">
+                    <div class="total-score"><h3>Score Total</h3><p>${displayScore.toFixed(1)} / 20</p></div>
+                    <div class="decision-actions">
+                        <button class="btn-eval" data-status="En évaluation">En évaluation</button>
+                        <button class="btn-accept" data-status="Accepté">Accepter</button>
+                        <button class="btn-refuse" data-status="Refusé">Refuser</button>
+                    </div>
+                </div>
+            </div>`;
+        attachProposalListeners(proposal);
+    }
+
     // --- Event Listeners ---
+    function attachRoadmapListeners(roadmap) {
+        const container = document.getElementById('roadmap-detail-container');
+        container.addEventListener('change', e => {
+            const field = e.target.dataset.field;
+            if (field) { 
+                roadmap[field] = e.target.value; 
+                if(field === 'period') render(); else saveState(); 
+            }
+            if (e.target.classList.contains('task-status')) {
+                const taskEl = e.target.closest('.task');
+                const taskId = taskEl.dataset.taskId;
+                const task = roadmap.priorityTasks.find(t => t.id === taskId);
+                if (task) {
+                    task.status = e.target.value;
+                    const statusClass = task.status.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '');
+                    taskEl.className = `task status-${statusClass}`;
+                    saveState();
+                }
+            }
+        });
+        container.addEventListener('click', e => {
+            if (e.target.classList.contains('delete-task-btn')) {
+                const taskId = e.target.closest('.task').dataset.taskId;
+                roadmap.priorityTasks = roadmap.priorityTasks.filter(t => t.id !== taskId);
+                render();
+            }
+        });
+        container.querySelector('#add-task-form').addEventListener('submit', e => {
+            e.preventDefault();
+            const input = e.target.querySelector('input');
+            if (input.value.trim()) {
+                if (!roadmap.priorityTasks) roadmap.priorityTasks = [];
+                roadmap.priorityTasks.push({ id: `task-${Date.now()}`, text: input.value.trim(), status: 'À faire' });
+                input.value = '';
+                render();
+            }
+        });
+    }
+
     function attachCRListeners(cr) {
         const container = document.getElementById('cr-detail-container');
         if (!container) return;
         
-        // Listeners pour les champs du CR (Date, Animateur, etc.)
         container.addEventListener('change', e => {
             const field = e.target.dataset.field;
             if (field && !e.target.closest('tr')) {
                 cr[field] = e.target.value;
                 if(field === 'date') render(); else saveState();
-            } else if (field) { // Décisions
+            } else if (field) {
                 const index = e.target.closest('tr').dataset.decisionIndex;
-                cr.decisions[index][field] = e.target.value;
-                saveState();
+                if (cr.decisions && cr.decisions[index]) {
+                    cr.decisions[index][field] = e.target.value;
+                    saveState();
+                }
             }
         });
         
         container.addEventListener('click', e => {
             if (e.target.id === 'add-decision-btn') {
-                cr.decisions = cr.decisions || [];
+                if (!cr.decisions) cr.decisions = [];
                 cr.decisions.push({ decision: '', owner: '', dueDate: '' });
                 render();
             }
             if (e.target.classList.contains('delete-row-btn')) {
                 const index = e.target.closest('tr').dataset.decisionIndex;
-                cr.decisions.splice(index, 1);
-                render();
+                if (cr.decisions) {
+                    cr.decisions.splice(index, 1);
+                    render();
+                }
             }
         });
 
-        // --- LISTENERS POUR L'ENREGISTREUR INTELLIGENT ---
         const recordButton = container.querySelector('#recordButton');
         const summarizeButton = container.querySelector('#summarizeButton');
         const teamReportButton = container.querySelector('#teamReportButton');
         
-        if (!recordButton) return; // Si le CR n'est pas sélectionné, les boutons n'existent pas
+        if (!recordButton) return;
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
             recordButton.disabled = true;
-            recordButton.textContent = "Navigateur non compatible";
+            recordButton.querySelector('#recordButtonText').textContent = "Navigateur non compatible";
         }
 
         recordButton.onclick = async () => {
@@ -416,14 +623,13 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const summaryText = await callGeminiAPI(prompt);
                 cr.summary = summaryText;
-                summaryEl.textContent = summaryText;
-                render(); // Re-render to show and save
+                render();
             } catch (error) {
                 summaryEl.textContent = "Erreur de génération.";
                 console.error(error);
             } finally {
-                summaryEl.classList.remove('hidden');
                 summaryLoader.classList.add('hidden');
+                summaryEl.classList.remove('hidden');
                 summarizeButton.disabled = false;
             }
         };
@@ -446,17 +652,54 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const reportText = await callGeminiAPI(prompt);
                 cr.teamReport = reportText;
-                teamReportEl.textContent = reportText;
-                 render(); // Re-render to show and save
+                 render();
             } catch (error) {
                 teamReportEl.textContent = "Erreur de génération.";
                 console.error(error);
             } finally {
-                teamReportEl.classList.remove('hidden');
                 teamReportLoader.classList.add('hidden');
+                teamReportEl.classList.remove('hidden');
                 teamReportButton.disabled = false;
             }
         };
+    }
+
+    function attachProposalListeners(proposal) {
+        const container = document.getElementById('proposal-detail-container');
+        container.addEventListener('change', e => {
+            const field = e.target.dataset.field;
+            if (field) {
+                proposal[field] = e.target.value;
+                if (field === 'name') render(); else saveState();
+            }
+            if (e.target.classList.contains('criterion-comment')) {
+                const critKey = e.target.dataset.criterion;
+                if (!proposal.criteria[critKey]) proposal.criteria[critKey] = {s:0, c:''};
+                proposal.criteria[critKey].c = e.target.value;
+                saveState();
+            }
+        });
+        container.addEventListener('input', e => {
+             if (e.target.type === 'range') {
+                const critKey = e.target.dataset.criterion;
+                if (!proposal.criteria[critKey]) proposal.criteria[critKey] = {s:0, c:''};
+                const score = parseFloat(e.target.value);
+                proposal.criteria[critKey].s = score;
+                
+                e.target.nextElementSibling.textContent = score.toFixed(1);
+                const totalScoreEl = container.querySelector('.total-score p');
+                if(totalScoreEl) {
+                    totalScoreEl.textContent = `${getDisplayScore(calculateRawScore(proposal)).toFixed(1)} / 20`;
+                }
+                saveState();
+            }
+        });
+        container.querySelector('.decision-actions').addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') {
+                proposal.status = e.target.dataset.status;
+                render();
+            }
+        });
     }
 
     // --- Logique de l'enregistreur intelligent ---
@@ -473,8 +716,11 @@ document.addEventListener('DOMContentLoaded', () => {
             mediaRecorder.addEventListener("stop", () => {
                 const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                 const audioUrl = URL.createObjectURL(audioBlob);
-                container.querySelector('#audioPlayer').src = audioUrl;
-                container.querySelector('#audioPlayerContainer').classList.remove('hidden');
+                const player = container.querySelector('#audioPlayer');
+                if (player) {
+                    player.src = audioUrl;
+                    container.querySelector('#audioPlayerContainer').classList.remove('hidden');
+                }
             });
 
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -484,7 +730,7 @@ document.addEventListener('DOMContentLoaded', () => {
             recognition.continuous = true;
             finalTranscript = '';
             const transcriptEl = container.querySelector('#transcript');
-            transcriptEl.textContent = '';
+            if (transcriptEl) transcriptEl.textContent = '';
             
             recognition.onresult = (event) => {
                 let interimTranscript = '';
@@ -495,12 +741,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         interimTranscript += event.results[i][0].transcript;
                     }
                 }
-                transcriptEl.textContent = finalTranscript + interimTranscript;
-                cr.transcript = transcriptEl.textContent; // Live update
+                if (transcriptEl) transcriptEl.textContent = finalTranscript + interimTranscript;
+                cr.transcript = finalTranscript + interimTranscript;
             };
 
             recognition.onend = () => {
-                cr.transcript = finalTranscript; // Save final version
+                cr.transcript = finalTranscript;
                 saveState();
             };
             
@@ -570,36 +816,111 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Global Event Listeners ---
-    document.getElementById('add-collaborator-btn').addEventListener('click', () => {
-        const name = prompt("Nom du nouveau collaborateur :");
-        if (!name) return;
-        const newId = `collab-${Date.now()}`;
-        state.collaborators[newId] = { id: newId, name: name.trim(), roadmaps: [], crs: [], proposals: {} };
-        state.activeCollaboratorId = newId;
-        render();
+    // --- Modal Logic ---
+    let currentModalCallback = null;
+    const inputModal = document.getElementById('input-modal');
+    const inputModalTitle = document.getElementById('input-modal-title');
+    const inputModalField = document.getElementById('input-modal-field');
+    const inputModalOk = document.getElementById('input-modal-ok');
+    const inputModalCancel = document.getElementById('input-modal-cancel');
+
+    function showInputModal(title, callback) {
+        inputModalTitle.textContent = title;
+        inputModalField.value = '';
+        inputModal.style.display = 'flex';
+        inputModalField.focus();
+        currentModalCallback = callback;
+    }
+
+    inputModalOk.addEventListener('click', () => {
+        if (currentModalCallback && inputModalField.value.trim()) {
+            currentModalCallback(inputModalField.value.trim());
+        }
+        inputModal.style.display = 'none';
+        currentModalCallback = null;
     });
 
-    document.querySelector('.tabs').addEventListener('click', e => { if (e.target.classList.contains('tab')) { state.activeView = e.target.dataset.view; render(); } });
+    inputModalCancel.addEventListener('click', () => {
+        inputModal.style.display = 'none';
+        currentModalCallback = null;
+    });
+    
+    inputModal.addEventListener('click', (e) => {
+        if (e.target === inputModal) {
+            inputModal.style.display = 'none';
+            currentModalCallback = null;
+        }
+    });
+
+    // --- Global Event Listeners ---
+    document.getElementById('add-collaborator-btn').addEventListener('click', () => {
+        showInputModal("Nom du nouveau collaborateur :", (name) => {
+            const newId = `collab-${Date.now()}`;
+            state.collaborators[newId] = { 
+                id: newId, 
+                name: name, 
+                roadmaps: [], activeRoadmapId: null,
+                proposals: {}, activeProposalId: null, proposalFilter: 'all',
+                crs: [], activeCrId: null
+            };
+            state.activeCollaboratorId = newId;
+            render();
+        });
+    });
+
+    document.querySelector('.tabs').addEventListener('click', e => { 
+        if (e.target.classList.contains('tab')) { 
+            state.activeView = e.target.dataset.view; 
+            render(); 
+        } 
+    });
     
     document.getElementById('main-view-container').addEventListener('click', e => {
         const activeCollaborator = state.collaborators[state.activeCollaboratorId];
         if (!activeCollaborator) return;
         
+        if (e.target.id === 'add-roadmap-btn') {
+            showInputModal("Période de la feuille de route (ex: Semaine 29):", (period) => {
+                const newRoadmap = { id: `roadmap-${Date.now()}`, period: period, priorityTasks: [] };
+                if (!activeCollaborator.roadmaps) activeCollaborator.roadmaps = [];
+                activeCollaborator.roadmaps.push(newRoadmap);
+                activeCollaborator.activeRoadmapId = newRoadmap.id;
+                render();
+            });
+        }
         if (e.target.id === 'add-cr-btn') {
             const newCr = { 
                 id: `cr-${Date.now()}`, 
                 date: new Date().toISOString().split('T')[0], 
-                decisions: [],
-                transcript: '',
-                summary: '',
-                teamReport: ''
+                decisions: [], transcript: '', summary: '', teamReport: ''
             };
-            activeCollaborator.crs = activeCollaborator.crs || [];
+            if (!activeCollaborator.crs) activeCollaborator.crs = [];
             activeCollaborator.crs.push(newCr);
-            activeCollaborator.crs.sort((a,b) => new Date(b.date) - new Date(a.date));
             activeCollaborator.activeCrId = newCr.id;
             render();
+        }
+        if (e.target.id === 'add-proposal-btn') {
+            showInputModal("Nom de la nouvelle proposition :", (name) => {
+                const newId = `prop-${Date.now()}`;
+                if (!activeCollaborator.proposals) activeCollaborator.proposals = {};
+                activeCollaborator.proposals[newId] = {
+                    id: newId, name: name, status: "En évaluation",
+                    criteria: [...PROPOSAL_CRITERIA.scoring, PROPOSAL_CRITERIA.final_comment].reduce((acc, crit) => {
+                        acc[crit.key] = { s: 0, c: '' }; return acc;
+                    }, {})
+                };
+                activeCollaborator.activeProposalId = newId;
+                render();
+            });
+        }
+    });
+
+    document.getElementById('main-view-container').addEventListener('change', e => {
+        if (e.target.id === 'filter-status') {
+            if(state.collaborators[state.activeCollaboratorId]) {
+                state.collaborators[state.activeCollaboratorId].proposalFilter = e.target.value;
+                render();
+            }
         }
     });
     
