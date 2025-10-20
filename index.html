@@ -1,495 +1,744 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎮 GAME OF JOBS – Forum de l'Emploi</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');
-        
-        body {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Nunito', Arial, sans-serif;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            background-image: 
-                radial-gradient(circle at 20% 80%, rgba(23,23,24,0.03) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(243,146,0,0.05) 0%, transparent 50%),
-                linear-gradient(45deg, transparent 49%, rgba(23,23,24,0.02) 50%, transparent 51%);
-            color: #171718;
-            overflow-x: hidden;
-            line-height: 1.6;
-            position: relative;
-        }
-        
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                repeating-linear-gradient(
-                    90deg,
-                    transparent,
-                    transparent 98px,
-                    rgba(23,23,24,0.01) 100px
-                ),
-                repeating-linear-gradient(
-                    0deg,
-                    transparent,
-                    transparent 98px,
-                    rgba(23,23,24,0.01) 100px
-                );
-            pointer-events: none;
-            z-index: -1;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GAME OF JOBS – Forum de l'Emploi</title>
+  <!-- Palette MLPB / police de base -->
+  <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --orange:#f39200;--vert:#95c11f;--bleu:#2897d5;--rose:#d60b52;--violet:#a3195b;--rouge:#9f3d3f;--noir:#171718;
+      --bg:#f7f7f8;--card:#ffffff;--muted:#e9ecef;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Muli","Mulish",Arial,sans-serif;background:linear-gradient(135deg,#f8f9fa 0%,#eceff3 100%);color:var(--noir)}
+    .container{max-width:1200px;margin:auto;padding:16px}
+    header{position:relative;background:linear-gradient(135deg,var(--noir) 0%,#2a2a2a 100%);color:#fff;padding:48px 20px;overflow:hidden}
+    header h1{margin:0;font-weight:900;letter-spacing:.02em;color:var(--orange);font-family:"Politica","Akrobat","Mulish",Arial,sans-serif}
+    header p{margin:8px 0 0}
+    .nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;background:#202123;padding:12px;border-top:3px solid var(--orange);border-bottom:3px solid var(--orange)}
+    .nav button{appearance:none;border:2px solid #333;background:#2b2c2e;color:#fff;padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:800;text-transform:uppercase}
+    .nav button.active,.nav button:hover{background:linear-gradient(135deg,var(--orange),#d17a00)}
+    .page{display:none;background:var(--card);border:1px solid var(--muted);padding:20px;margin:20px 0;border-left:8px solid var(--orange)}
+    .page.active{display:block;animation:fade .25s ease}
+    @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+    .grid{display:grid;gap:12px}
+    .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+    .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+    .grid.cols-4{grid-template-columns:repeat(4,1fr)}
+    @media (max-width:992px){.grid.cols-3,.grid.cols-4{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:640px){.grid.cols-2,.grid.cols-3,.grid.cols-4{grid-template-columns:1fr}}
 
-        .header {
-            text-align: center;
-            background: linear-gradient(135deg, #171718 0%, #2c2c2e 100%);
-            color: white;
-            padding: 60px 40px;
-            border: none;
-            margin-bottom: 30px;
-            position: relative;
-            overflow: hidden;
-            border-radius: 0;
-            box-shadow: 
-                0 8px 32px rgba(23,23,24,0.4),
-                inset 0 1px 0 rgba(255,255,255,0.1);
-        }
+    .chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--muted);border-radius:999px;padding:6px 10px;font-weight:700}
+    .btn{appearance:none;border:2px solid var(--noir);background:linear-gradient(135deg,var(--orange),#d17a00);color:#fff;padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:800}
+    .btn.ghost{background:#fff;color:var(--noir)}
+    .btn.line{background:#fff;border-color:var(--orange);color:var(--orange)}
+    .card{background:var(--card);border:1px solid var(--muted);border-radius:12px;padding:16px}
+    .h{margin:0 0 12px}
+    .muted{color:#6c757d}
+    input,select,textarea{width:100%;padding:10px;border:1px solid var(--muted);border-radius:10px;background:#fff}
+    label{font-weight:800;margin:8px 0 6px;display:block}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid var(--muted);text-align:left}
+    .right{text-align:right}
 
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                linear-gradient(45deg, transparent 30%, rgba(243,146,0,0.1) 50%, transparent 70%),
-                repeating-linear-gradient(
-                    -45deg,
-                    transparent,
-                    transparent 20px,
-                    rgba(255,255,255,0.02) 22px
-                );
-            z-index: 1;
-        }
+    /* "Tuiles" secteurs */
+    .sector{position:relative;display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:center;padding:14px;border:2px solid var(--noir);border-radius:14px;color:#fff;cursor:pointer;min-height:120px}
+    .sector .title{font-weight:900;font-size:1.05rem}
+    .sector .count{opacity:.9;font-size:.85rem}
+    .sector .actions{position:absolute;top:8px;right:8px;display:flex;gap:6px}
+    .sector .actions button{width:30px;height:30px;border-radius:50%;border:2px solid #fff;background:#fff;color:var(--noir);cursor:pointer}
 
-        .header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 6px;
-            background: linear-gradient(90deg, #f39200 0%, #95c11f 25%, #2897d5 50%, #d60b52 75%, #a3195b 100%);
-            z-index: 3;
-        }
+    /* Badges */
+    .badge{display:flex;gap:10px;align-items:center;border:2px dashed var(--muted);padding:10px;border-radius:12px}
+    .badge.unlocked{border-style:solid;border-color:var(--vert);background:linear-gradient(135deg,#f0ffe6,#fff)}
 
-        .header h1 {
-            font-family: 'Oswald', Arial, sans-serif;
-            font-size: 3.8rem;
-            font-weight: 700;
-            margin: 0 0 20px 0;
-            position: relative;
-            z-index: 2;
-            letter-spacing: 0.05em;
-            color: #f39200;
-            text-transform: uppercase;
-            text-shadow: 
-                3px 3px 0 #171718,
-                6px 6px 0 rgba(23,23,24,0.3),
-                0 0 30px rgba(243,146,0,0.5);
-            transform: perspective(500px) rotateX(15deg);
-        }
+    /* Modale simple */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+    .modal.active{display:flex}
+    .modal .sheet{background:#fff;border-radius:12px;max-width:720px;width:100%;padding:16px}
 
-        .header .subtitle {
-            font-size: 1.1rem;
-            margin: 25px 0 20px 0;
-            position: relative;
-            z-index: 2;
-            line-height: 1.5;
-            font-weight: 600;
-            color: white;
-        }
+    /* Progress bars */
+    .bar{height:10px;background:#edf0f3;border-radius:999px;overflow:hidden}
+    .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--orange),var(--rose));}
 
-        .header .subtitle div {
-            margin: 10px 0;
-            padding: 15px 25px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-            border-radius: 0;
-            display: inline-block;
-            color: white;
-            box-shadow: 
-                0 4px 15px rgba(0,0,0,0.2),
-                inset 0 1px 0 rgba(255,255,255,0.1);
-            border: none;
-            border-left: 6px solid #d60b52;
-            backdrop-filter: blur(10px);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-        }
+    @media print{
+      header,.nav,.modal, #page-map, #page-rules, #page-questions, #page-rewards{display:none!important}
+      #page-progress{display:block;border:none;margin:0}
+      body{background:#fff}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container" style="display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+      <div>
+        <h1>GAME OF JOBS</h1>
+        <p class="muted">Forum de l'Emploi – Mission Locale</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="chip">👤 <span id="currentUserName">Invité</span></div>
+        <button class="btn line" id="btnSwitchUser">Changer / créer un profil</button>
+        <button class="btn ghost" id="btnCoachMode">Mode animateur</button>
+      </div>
+    </div>
+  </header>
 
-        .header .subtitle div:nth-child(2) {
-            border-left-color: #2897d5;
-            margin-left: 15px;
-            transform: rotate(-1deg);
-        }
+  <nav class="nav">
+    <button class="active" data-page="map">🗺️ Carte</button>
+    <button data-page="rules">📋 Règles</button>
+    <button data-page="progress">📊 Mon parcours</button>
+    <button data-page="questions">❓ FAQ</button>
+    <button data-page="rewards">🏆 Récompenses</button>
+  </nav>
 
-        .header .subtitle div:nth-child(3) {
-            border-left-color: #95c11f;
-            margin-left: 30px;
-            transform: rotate(1deg);
-        }
+  <main class="container">
+    <!-- PAGE CARTE -->
+    <section id="page-map" class="page active">
+      <div class="grid cols-3">
+        <div class="card">
+          <h3 class="h">🎯 Score & progression</h3>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center">
+            <div>
+              <div class="muted">Score total</div>
+              <div style="font-weight:900;font-size:2rem;color:var(--orange)" id="ui-total-score">0</div>
+            </div>
+            <button class="btn ghost" id="btnAddPoints">+ Points</button>
+          </div>
+          <div style="margin-top:10px">
+            <div class="muted">Pas "Warrior" (bonus)</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="number" min="0" id="input-steps" placeholder="Saisir un nombre de pas"/>
+              <button class="btn" id="btnAddSteps">Ajouter</button>
+            </div>
+            <small class="muted">1 000 pas = <b id="ratioSteps">5</b> pts (paramétrable)</small>
+          </div>
+        </div>
 
-        .header p {
-            font-size: 1.1rem;
-            margin: 20px 0 0 0;
-            position: relative;
-            z-index: 2;
-            color: #171718;
-            font-weight: 600;
-            background: #f8f9fa;
-            padding: 15px 30px;
-            display: inline-block;
-            border-radius: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            border: 2px solid #f39200;
-        }
+        <div class="card">
+          <h3 class="h">🧭 Objectifs rapides</h3>
+          <div class="grid cols-2" id="ui-objectives"></div>
+        </div>
 
-        .navigation {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            padding: 20px;
-            background: linear-gradient(135deg, rgba(23,23,24,0.8) 0%, rgba(44,44,46,0.8) 100%);
-            backdrop-filter: blur(10px);
-            border-top: 3px solid #f39200;
-            border-bottom: 3px solid #f39200;
-        }
+        <div class="card">
+          <h3 class="h">🏅 Badges</h3>
+          <div class="grid cols-2" id="ui-badges"></div>
+        </div>
+      </div>
 
-        .nav-btn {
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-            border: 2px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 16px 24px;
-            border-radius: 0;
-            cursor: pointer;
-            font-weight: 700;
-            font-family: 'Oswald', Arial, sans-serif;
-            transition: all 0.3s ease;
-            box-shadow: 
-                0 4px 15px rgba(0,0,0,0.3),
-                inset 0 1px 0 rgba(255,255,255,0.1);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            position: relative;
-            overflow: hidden;
-        }
+      <div class="card" style="margin-top:16px">
+        <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+          <h3 class="h">🗺️ Carte interactive – Secteurs & entreprises</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn" id="btnNewSector">➕ Nouveau secteur</button>
+            <button class="btn ghost" id="btnExport">⤴️ Export</button>
+            <button class="btn ghost" id="btnImport">⤵️ Import</button>
+            <input type="file" id="fileImport" accept="application/json" style="display:none"/>
+          </div>
+        </div>
+        <div id="ui-sectors" class="grid cols-4" style="margin-top:10px"></div>
+      </div>
+    </section>
 
-        .nav-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(243,146,0,0.3), transparent);
-            transition: left 0.5s ease;
-        }
+    <!-- PAGE REGLES -->
+    <section id="page-rules" class="page">
+      <h2 class="h">📋 Règles du jeu</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3 class="h">Système de points</h3>
+          <table>
+            <tbody id="ui-point-rules"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3 class="h">Paramètres</h3>
+          <label>Ratio pas → points (pts / 1 000 pas)</label>
+          <input type="number" min="0" id="input-ratio-steps" />
+          <div style="margin-top:10px"><button class="btn" id="btnSaveSettings">Sauvegarder</button></div>
+        </div>
+      </div>
+    </section>
 
-        .nav-btn:hover::before {
-            left: 100%;
-        }
+    <!-- PAGE PARCOURS -->
+    <section id="page-progress" class="page">
+      <h2 class="h">📊 Mon parcours</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3 class="h">Historique</h3>
+          <table>
+            <thead><tr><th>Date</th><th>Action</th><th class="right">± Points</th></tr></thead>
+            <tbody id="ui-log"></tbody>
+          </table>
+          <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn ghost" id="btnPrint">🖨️ Imprimer mon parcours (PDF)</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3 class="h">Ajuster manuellement</h3>
+          <label>Raison</label>
+          <input id="input-manual-reason" placeholder="ex. Bonus participation" />
+          <label>Points (+/-)</label>
+          <input id="input-manual-points" type="number" value="0" />
+          <div style="margin-top:10px"><button class="btn" id="btnManualAdjust">Ajouter au parcours</button></div>
+        </div>
+      </div>
+    </section>
 
-        .nav-btn:hover, .nav-btn.active {
-            background: linear-gradient(135deg, #f39200 0%, #d17a00 100%);
-            color: white;
-            transform: translateY(-3px);
-            box-shadow: 
-                0 8px 25px rgba(243,146,0,0.4),
-                0 0 20px rgba(243,146,0,0.3);
-            border-color: #171718;
-        }
+    <!-- PAGE FAQ -->
+    <section id="page-questions" class="page">
+      <h2 class="h">❓ Questions fréquentes</h2>
+      <div class="card">
+        <p>Pose tes questions au QG ou auprès des recruteurs. Tu peux aussi demander un débrief au stand Mission Locale.</p>
+      </div>
+    </section>
 
-        .page {
-            display: none;
-            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,249,250,0.95) 100%);
-            border-radius: 0;
-            padding: 40px;
-            box-shadow: 
-                0 12px 40px rgba(23,23,24,0.15),
-                inset 0 1px 0 rgba(255,255,255,0.8);
-            margin-bottom: 30px;
-            border: none;
-            border-left: 8px solid #f39200;
-            position: relative;
-            backdrop-filter: blur(10px);
-        }
+    <!-- PAGE RECOMPENSES -->
+    <section id="page-rewards" class="page">
+      <h2 class="h">🏆 Récompenses</h2>
+      <div class="card">
+        <div id="ui-rewards" class="grid cols-2"></div>
+      </div>
+    </section>
+  </main>
 
-        .page::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #f39200 0%, #95c11f 25%, #2897d5 50%, #d60b52 75%, #a3195b 100%);
-        }
+  <!-- Modal Mode Animateur -->
+  <div class="modal" id="modalCoach">
+    <div class="sheet">
+      <h3 class="h">🎛️ Tableau d'animation (anonymisé)</h3>
+      <div class="muted" style="margin-bottom:8px">Vue synthétique des scores (initiales + score)</div>
+      <table>
+        <thead><tr><th>Participant</th><th class="right">Score</th></tr></thead>
+        <tbody id="ui-coach"></tbody>
+      </table>
+      <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn ghost" data-close>Fermer</button>
+      </div>
+    </div>
+  </div>
 
-        .page.active {
-            display: block;
-            animation: fadeIn 0.5s ease-in;
-        }
+  <!-- Modales -->
+  <div class="modal" id="modalUser">
+    <div class="sheet">
+      <h3 class="h">👤 Choisir ou créer un profil</h3>
+      <div id="ui-users" class="grid cols-2" style="margin-bottom:12px"></div>
+      <label>Nouveau profil</label>
+      <input id="input-new-user" placeholder="Prénom ou pseudo" />
+      <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn ghost" data-close>Annuler</button>
+        <button class="btn" id="btnCreateUser">Créer</button>
+      </div>
+    </div>
+  </div>
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+  <div class="modal" id="modalSector">
+    <div class="sheet">
+      <h3 class="h" id="modal-sector-title">➕ Nouveau secteur</h3>
+      <label>Nom du secteur</label>
+      <input id="input-sector-name" placeholder="ex. Numérique" />
+      <label>Couleur (CSS)</label>
+      <input id="input-sector-color" placeholder="#2897d5 ou linear-gradient(...)" />
+      <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn ghost" data-close>Annuler</button>
+        <button class="btn" id="btnSaveSector">Enregistrer</button>
+      </div>
+    </div>
+  </div>
 
-        @keyframes gentleFloat {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
-        }
+  <div class="modal" id="modalCompany">
+    <div class="sheet">
+      <h3 class="h">🏢 Entreprise</h3>
+      <input type="hidden" id="company-sector-id" />
+      <label>Nom</label>
+      <input id="input-company-name" placeholder="ex. ACME" />
+      <label>Contact / Stand</label>
+      <input id="input-company-contact" placeholder="mail / stand / tel" />
+      <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn ghost" data-close>Annuler</button>
+        <button class="btn" id="btnSaveCompany">Enregistrer</button>
+      </div>
+    </div>
+  </div>
 
-        .game-sector, .special-sector {
-            width: 140px;
-            height: 140px;
-            border-radius: 0;
-            color: white;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            box-shadow: 
-                0 8px 25px rgba(0,0,0,0.3),
-                inset 0 1px 0 rgba(255,255,255,0.2),
-                inset 0 -1px 0 rgba(0,0,0,0.2);
-            border: 3px solid #171718;
-            transform: perspective(1000px) rotateX(5deg);
-        }
+  <div class="modal" id="modalOffer">
+    <div class="sheet">
+      <h3 class="h">📌 Offre à pourvoir</h3>
+      <input type="hidden" id="offer-sector-id" />
+      <input type="hidden" id="offer-company-id" />
+      <label>Intitulé</label>
+      <input id="input-offer-title" placeholder="ex. Vendeur(se) conseil" />
+      <label>Type</label>
+      <select id="input-offer-type">
+        <option>CDI</option><option>CDD</option><option>Alternance</option><option>Stage</option>
+      </select>
+      <label>Notes</label>
+      <textarea id="input-offer-notes" rows="3" placeholder="infos utiles"></textarea>
+      <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn ghost" data-close>Annuler</button>
+        <button class="btn" id="btnSaveOffer">Enregistrer</button>
+      </div>
+    </div>
+  </div>
 
-        .game-sector::before, .special-sector::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                repeating-linear-gradient(
-                    45deg,
-                    transparent,
-                    transparent 10px,
-                    rgba(255,255,255,0.05) 12px
-                );
-            pointer-events: none;
-        }
+  <script>
+  /**********************
+   * STATE & PERSISTENCE
+   **********************/
+  const LS_KEYS = {
+    USERS: 'goj_users',            // {userId: {id,name,score,steps,badges:[],log:[],visited:{},settings:{}}}
+    CURRENT: 'goj_current_user',   // userId
+    MAP: 'goj_map',                // {sectors:[{id,name,color,companies:[{id,name,contact,offers:[{id,title,type,notes}]}]}]}
+    SETTINGS: 'goj_settings'       // {stepsPer1000:5, pointRules:[...]}
+  };
 
-        .game-sector:hover, .special-sector:hover {
-            transform: perspective(1000px) rotateX(0deg) translateY(-8px) scale(1.08);
-            box-shadow: 
-                0 15px 40px rgba(0,0,0,0.4),
-                0 0 30px rgba(243,146,0,0.3),
-                inset 0 1px 0 rgba(255,255,255,0.3);
-        }
+  // Defaults
+  const DEFAULT_SETTINGS = {
+    stepsPer1000: 5,
+    pointRules: [
+      {code:'visit_sector', label:"Visite d'un secteur", points:20},
+      {code:'ask_question', label:"Question posée", points:50},
+      {code:'drop_cv', label:"CV déposé", points:100},
+      {code:'contact_obtained', label:"Contact obtenu", points:200}
+    ],
+    badges: [
+      {code:'explorer', label:'🧭 Explorateur',  hint:'Visite 3 secteurs', check:u=>countVisitedSectors(u)>=3},
+      {code:'talker',   label:'💬 Communicateur',hint:'5 questions posées',check:u=>countInLog(u,'ask_question')>=5},
+      {code:'pro',      label:'📄 Candidat Pro', hint:'CV déposé x3',      check:u=>countInLog(u,'drop_cv')>=3},
+      {code:'hunter',   label:'🌟 Job Hunter',   hint:'Un contact obtenu', check:u=>countInLog(u,'contact_obtained')>=1},
+    ],
+    rewards: [
+      {code:'r1', label:'🎟️ Tirage cadeau', threshold:300, desc:'Entrée au tirage goodies'},
+      {code:'r2', label:'🥤 Boisson offerte', threshold:600, desc:'Au stand partenaires'},
+      {code:'r3', label:'🎁 Super Goodie', threshold:1000, desc:'Récompense premium'}
+    ]
+  };
 
-        .game-sector .sector-icon, .special-sector .sector-icon {
-            font-size: 2rem;
-            margin-bottom: 5px;
-        }
+  // Bootstrap localStorage structures
+  function getSettings(){ return JSON.parse(localStorage.getItem(LS_KEYS.SETTINGS)||'null') || saveSettings(DEFAULT_SETTINGS); }
+  function saveSettings(s){ localStorage.setItem(LS_KEYS.SETTINGS, JSON.stringify(s)); return s; }
 
-        .game-sector h4, .special-sector h4 {
-            margin: 0;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
+  function getUsers(){ return JSON.parse(localStorage.getItem(LS_KEYS.USERS)||'{}'); }
+  function saveUsers(users){ localStorage.setItem(LS_KEYS.USERS, JSON.stringify(users)); }
+  function getCurrentUserId(){ return localStorage.getItem(LS_KEYS.CURRENT); }
+  function setCurrentUserId(id){ localStorage.setItem(LS_KEYS.CURRENT,id); }
+  function getMap(){
+    const empty={sectors:[]};
+    return JSON.parse(localStorage.getItem(LS_KEYS.MAP)||'null') || (localStorage.setItem(LS_KEYS.MAP,JSON.stringify(empty)), empty);
+  }
+  function saveMap(map){ localStorage.setItem(LS_KEYS.MAP, JSON.stringify(map)); }
 
-        .sector-controls {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            display: flex;
-            gap: 5px;
-        }
+  // Helpers
+  const uid = ()=>'id-'+Math.random().toString(36).slice(2,10);
+  const nowStr = ()=> new Date().toLocaleString();
+  function ensureUser(u){
+    return Object.assign({score:0,steps:0,badges:[],claimedRewards:[],log:[],visited:{},settings:{}}, u);
+  },settings:{}}, u);
+  }
+  function countVisitedSectors(user){ return Object.keys(user.visited||{}).filter(k=>user.visited[k]).length; }
+  function countInLog(user,code){ return (user.log||[]).filter(e=>e.code===code).length; }
 
-        .sector-controls button {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.8);
-            background: rgba(255,255,255,0.9);
-            color: #171718;
-            font-size: 0.8rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
+  /**********************
+   * UI BINDING / NAV
+   **********************/
+  const navButtons = document.querySelectorAll('.nav button');
+  navButtons.forEach(btn=>btn.addEventListener('click',()=>{
+    navButtons.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    showPage(btn.dataset.page);
+  }));
+  function showPage(key){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+key).classList.add('active');
+  }
 
-        .sector-controls button:hover {
-            background: #f39200;
-            color: white;
-            border-color: #f39200;
-            transform: scale(1.1);
-        }
+  // Modals
+  function openModal(id){ document.getElementById(id).classList.add('active'); }
+  function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+  document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',e=>{
+    const modal = e.target.closest('.modal');
+    if(modal) modal.classList.remove('active');
+  }));
 
-        .objective-card {
-            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,249,250,0.9) 100%);
-            border: 3px solid #171718;
-            border-radius: 0;
-            padding: 25px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 
-                0 6px 20px rgba(23,23,24,0.2),
-                inset 0 1px 0 rgba(255,255,255,0.8);
-            position: relative;
-            overflow: hidden;
-        }
+  /**********************
+   * USERS (multi-profils)
+   **********************/
+  const btnSwitchUser = document.getElementById('btnSwitchUser');
+  const currentUserName = document.getElementById('currentUserName');
+  const usersGrid = document.getElementById('ui-users');
+  const inputNewUser = document.getElementById('input-new-user');
 
-        .objective-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(243,146,0,0.1), transparent);
-            transition: left 0.6s ease;
-        }
+  btnSwitchUser.addEventListener('click',()=>{ renderUsersModal(); openModal('modalUser'); });
+  document.getElementById('btnCreateUser').addEventListener('click',()=>{
+    const name = (inputNewUser.value||'').trim();
+    if(!name) return alert('Indique un nom');
+    const users = getUsers();
+    const id = uid();
+    users[id] = ensureUser({id,name});
+    saveUsers(users); setCurrentUserId(id);
+    inputNewUser.value=''; closeModal('modalUser'); refreshUI();
+  });
 
-        .objective-card:hover::before {
-            left: 100%;
-        }
+  function renderUsersModal(){
+    const users = getUsers();
+    usersGrid.innerHTML = Object.values(users).map(u=>`<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <div><div style="font-weight:900">${u.name}</div><div class="muted">Score: ${u.score||0} – Badges: ${(u.badges||[]).length}</div></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn line" data-action="switch" data-id="${u.id}">Activer</button>
+        <button class="btn ghost" data-action="delete" data-id="${u.id}">Supprimer</button>
+      </div>
+    </div>`).join('') || '<div class="muted">Aucun profil pour le moment.</div>';
+    usersGrid.querySelectorAll('button').forEach(b=>b.addEventListener('click',e=>{
+      const id=b.dataset.id; const action=b.dataset.action; const users=getUsers();
+      if(action==='switch'){ setCurrentUserId(id); closeModal('modalUser'); refreshUI(); }
+      if(action==='delete'){
+        if(confirm('Supprimer ce profil ?')){ delete users[id]; saveUsers(users); renderUsersModal(); }
+      }
+    }));
+  }
 
-        .objective-card:hover {
-            border-color: #f39200;
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 
-                0 12px 35px rgba(243,146,0,0.3),
-                0 0 20px rgba(243,146,0,0.2);
-        }
+  function getActiveUser(){
+    const users = getUsers(); const id = getCurrentUserId();
+    if(id && users[id]) return ensureUser(users[id]);
+    // create default guest
+    const nid = uid(); users[nid]=ensureUser({id:nid,name:'Invité'}); saveUsers(users); setCurrentUserId(nid); return users[nid];
+  }
+  function updateActiveUser(mutator){
+    const users=getUsers(); const id=getCurrentUserId(); if(!id||!users[id]) return;
+    users[id]=ensureUser( mutator(ensureUser(users[id])) );
+    saveUsers(users); refreshUI();
+  }
 
-        .objective-card.completed {
-            background: linear-gradient(135deg, #95c11f 0%, #7ba518 100%);
-            color: white;
-            border-color: #171718;
-            box-shadow: 
-                0 8px 30px rgba(149,193,31,0.4),
-                0 0 25px rgba(149,193,31,0.3);
-            transform: scale(1.05);
-        }
+  /**********************
+   * MAP (secteurs/entreprises/offres)
+   **********************/
+  const uiSectors = document.getElementById('ui-sectors');
+  const btnNewSector = document.getElementById('btnNewSector');
+  const btnExport = document.getElementById('btnExport');
+  const btnImport = document.getElementById('btnImport');
+  const fileImport = document.getElementById('fileImport');
 
-        .objective-icon {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
+  btnNewSector.addEventListener('click',()=>{ document.getElementById('input-sector-name').value=''; document.getElementById('input-sector-color').value=''; openModal('modalSector'); });
+  document.getElementById('btnSaveSector').addEventListener('click',()=>{
+    const name = document.getElementById('input-sector-name').value.trim();
+    const color = document.getElementById('input-sector-color').value.trim()||'linear-gradient(135deg,var(--bleu),var(--vert))';
+    if(!name) return alert('Nom requis');
+    const map=getMap();
+    map.sectors.push({id:uid(),name,color,companies:[]});
+    saveMap(map); closeModal('modalSector'); renderMap();
+  });
 
-        .objective-card h4 {
-            margin: 10px 0;
-            font-size: 1rem;
-        }
+  btnExport.addEventListener('click',()=>{
+    const map=getMap(); const blob=new Blob([JSON.stringify(map,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='game_of_jobs_map.json'; a.click();
+  });
+  btnImport.addEventListener('click',()=>fileImport.click());
+  fileImport.addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f) return; const r=new FileReader();
+    r.onload=()=>{ try{ const data=JSON.parse(r.result); if(!data.sectors) throw new Error('Format invalide'); saveMap(data); renderMap(); alert('Import OK'); }catch(err){ alert('Import impossible: '+err.message); } };
+    r.readAsText(f);
+  });
 
-        .objective-points {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #f39200;
-            margin: 10px 0;
-        }
+  function renderMap(){
+    const map=getMap(); const user=getActiveUser();
+    uiSectors.innerHTML = map.sectors.map(sector=>{
+      const companiesCount = sector.companies.length;
+      const visited = !!user.visited[sector.id];
+      return `<div class="sector" style="background:${cssColor(sector.color)}" data-sector-id="${sector.id}">
+        <div class="actions">
+          <button title="Ajouter entreprise" data-act="addCompany">＋</button>
+          <button title="Renommer" data-act="editSector">✎</button>
+          <button title="Supprimer" data-act="deleteSector">🗑️</button>
+        </div>
+        <div class="title">${visited?'✅ ':''}${sector.name}</div>
+        <div class="count">${companiesCount} entreprise${companiesCount>1?'s':''}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${sector.companies.map(c=>`<span class="chip" data-company-id="${c.id}" data-sector-id="${sector.id}">🏢 ${c.name}</span>`).join('')}</div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ghost" data-act="visit">Visiter</button>
+          <button class="btn line" data-act="dropCV">Déposer CV</button>
+          <button class="btn ghost" data-act="askQuestion">Poser une question</button>
+          <button class="btn ghost" data-act="contact">Contact obtenu</button>
+        </div>
+      </div>`;
+    }).join('') || '<div class="muted">Aucun secteur. Ajoute-en un.</div>';
 
-        .objective-card.completed .objective-points {
-            color: white;
-        }
+    // Bind sector actions
+    uiSectors.querySelectorAll('.sector').forEach(card=>{
+      const sectorId = card.dataset.sectorId;
+      card.querySelectorAll('button').forEach(b=>b.addEventListener('click',e=>{
+        e.stopPropagation(); const act=b.dataset.act; if(!act) return;
+        if(act==='addCompany') return openCompanyModal(sectorId);
+        if(act==='editSector') return editSector(sectorId);
+        if(act==='deleteSector') return deleteSector(sectorId);
+        if(act==='visit') return addPointEvent('visit_sector',`Visite secteur`, +getSettings().pointRules.find(r=>r.code==='visit_sector').points, {sectorId});
+        if(act==='dropCV') return addPointEvent('drop_cv',`CV déposé`, +getSettings().pointRules.find(r=>r.code==='drop_cv').points, {sectorId});
+        if(act==='askQuestion') return addPointEvent('ask_question',`Question posée`, +getSettings().pointRules.find(r=>r.code==='ask_question').points, {sectorId});
+        if(act==='contact') return addPointEvent('contact_obtained',`Contact obtenu`, +getSettings().pointRules.find(r=>r.code==='contact_obtained').points, {sectorId});
+      }));
+      // clicking a company chip → manage offers
+      card.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>{
+        const sId=ch.dataset.sectorId; const cId=ch.dataset.companyId; manageCompanyOffers(sId,cId);
+      }));
+    });
+  }
 
-        .objective-status {
-            font-size: 0.9rem;
-            padding: 5px 10px;
-            border-radius: 15px;
-            background: #f8f9fa;
-            color: #6c757d;
-            display: inline-block;
-        }
+  function cssColor(c){ return c && c.includes('gradient') ? c : (c||'#2897d5'); }
+  function openCompanyModal(sectorId){
+    document.getElementById('company-sector-id').value=sectorId;
+    document.getElementById('input-company-name').value='';
+    document.getElementById('input-company-contact').value='';
+    openModal('modalCompany');
+  }
+  document.getElementById('btnSaveCompany').addEventListener('click',()=>{
+    const sId=document.getElementById('company-sector-id').value;
+    const name=document.getElementById('input-company-name').value.trim();
+    const contact=document.getElementById('input-company-contact').value.trim();
+    if(!sId||!name) return alert('Nom requis');
+    const map=getMap(); const sector = map.sectors.find(s=>s.id===sId); if(!sector) return;
+    sector.companies.push({id:uid(),name,contact,offers:[]});
+    saveMap(map); closeModal('modalCompany'); renderMap();
+  });
 
-        .objective-card.completed .objective-status {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
+  function editSector(sectorId){
+    const map=getMap(); const s=map.sectors.find(x=>x.id===sectorId); if(!s) return;
+    document.getElementById('modal-sector-title').textContent='✎ Renommer le secteur';
+    document.getElementById('input-sector-name').value=s.name;
+    document.getElementById('input-sector-color').value=s.color||'';
+    openModal('modalSector');
+    const saveBtn=document.getElementById('btnSaveSector');
+    const oldHandler = saveBtn._handler; if(oldHandler) saveBtn.removeEventListener('click',oldHandler);
+    const handler=()=>{
+      const name=document.getElementById('input-sector-name').value.trim();
+      const color=document.getElementById('input-sector-color').value.trim()||s.color;
+      if(!name) return alert('Nom requis'); s.name=name; s.color=color; saveMap(map); closeModal('modalSector');
+      document.getElementById('modal-sector-title').textContent='➕ Nouveau secteur';
+      // restore default handler
+      saveBtn.removeEventListener('click',handler);
+      saveBtn._handler=null;
+      saveBtn.addEventListener('click',defaultSaveSectorHandler);
+      renderMap();
+    };
+    saveBtn._handler=handler; saveBtn.addEventListener('click',handler);
+  }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #f39200 0%, #d17a00 100%);
-            color: white;
-            border: 3px solid #171718;
-            padding: 18px 36px;
-            border-radius: 0;
-            font-weight: 700;
-            font-family: 'Oswald', Arial, sans-serif;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 
-                0 8px 25px rgba(243,146,0,0.3),
-                inset 0 1px 0 rgba(255,255,255,0.2);
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            position: relative;
-            overflow: hidden;
-        }
+  function defaultSaveSectorHandler(){}
+  // store default for restoration
+  document.getElementById('btnSaveSector')._handler=defaultSaveSectorHandler;
 
-        .btn-primary::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.6s ease;
-        }
+  function deleteSector(id){
+    if(!confirm('Supprimer ce secteur ?')) return;
+    const map=getMap(); map.sectors = map.sectors.filter(s=>s.id!==id); saveMap(map); renderMap();
+  }
 
-        .btn-primary:hover::before {
-            left: 100%;
-        }
+  function manageCompanyOffers(sectorId, companyId){
+    const map=getMap(); const s=map.sectors.find(x=>x.id===sectorId); if(!s) return;
+    const c=s.companies.find(x=>x.id===companyId); if(!c) return;
+    // simple prompt UI
+    const choice = prompt(`Entreprise: ${c.name}\n1) Ajouter une offre\n2) Supprimer une offre\n3) Supprimer l'entreprise\n4) Déposer mon CV ici`);
+    if(choice==='1'){ document.getElementById('offer-sector-id').value=sectorId; document.getElementById('offer-company-id').value=companyId; document.getElementById('input-offer-title').value=''; document.getElementById('input-offer-notes').value=''; openModal('modalOffer'); }
+    if(choice==='2'){
+      if(!c.offers.length) return alert('Aucune offre');
+      const idx = +prompt('Index de 1 à '+c.offers.length+' à supprimer ?')-1;
+      if(idx>=0 && idx<c.offers.length){ c.offers.splice(idx,1); saveMap(map); renderMap(); }
+    }
+    if(choice==='3'){
+      if(confirm('Supprimer cette entreprise ?')){ s.companies = s.companies.filter(x=>x.id!==companyId); saveMap(map); renderMap(); }
+    }
+    if(choice==='4'){
+      addPointEvent('drop_cv',`CV déposé (${c.name})`, +getSettings().pointRules.find(r=>r.code==='drop_cv').points, {sectorId});
+    }
+  }
 
-        .btn-primary:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 
-                0 12px 35px rgba(243,146,0,0.4),
-                0 0 30px rgba(243,146,0,0.3);
-        }
+  document.getElementById('btnSaveOffer').addEventListener('click',()=>{
+    const sId=document.getElementById('offer-sector-id').value;
+    const cId=document.getElementById('offer-company-id').value;
+    const title=document.getElementById('input-offer-title').value.trim();
+    const type=document.getElementById('input-offer-type').value;
+    const notes=document.getElementById('input-offer-notes').value.trim();
+    if(!title) return alert('Intitulé requis');
+    const map=getMap(); const s=map.sectors.find(x=>x.id===sId); if(!s) return; const c=s.companies.find(x=>x.id===cId); if(!c) return;
+    c.offers.push({id:uid(),title,type,notes}); saveMap(map); closeModal('modalOffer'); renderMap();
+  });
 
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at center, rgba(23,23,24,0.8) 0%, rgba(23,23,24,0.9) 100%),
-                repeating-linear-gradient(
-                    45deg,
-                    transparent
+  /**********************
+   * POINTS / OBJECTIFS / BADGES
+   **********************/
+  const uiTotalScore = document.getElementById('ui-total-score');
+  const uiObjectives = document.getElementById('ui-objectives');
+  const uiBadges = document.getElementById('ui-badges');
+  const btnAddPoints = document.getElementById('btnAddPoints');
+  const inputSteps = document.getElementById('input-steps');
+  const btnAddSteps = document.getElementById('btnAddSteps');
+
+  function addPointEvent(code, label, delta, extra={}){
+    updateActiveUser(u=>{
+      u.score=(u.score||0)+(+delta||0);
+      u.log=u.log||[]; u.log.unshift({t:nowStr(),code,label,delta});
+      if(extra.sectorId){ u.visited=u.visited||{}; u.visited[extra.sectorId]=true; }
+      return u;
+    });
+    checkBadges();
+  }
+
+  btnAddPoints.addEventListener('click',()=>{
+    const val = +prompt('Points à ajouter (ex. 10) ?','10');
+    if(!isFinite(val)) return; addPointEvent('manual','Ajout manuel', val);
+  });
+
+  btnAddSteps.addEventListener('click',()=>{
+    const steps = +inputSteps.value; if(!isFinite(steps)||steps<=0) return alert('Indique un nombre de pas');
+    const ratio = getSettings().stepsPer1000; const pts = Math.floor((steps/1000)*ratio);
+    updateActiveUser(u=>{ u.steps=(u.steps||0)+steps; return u; });
+    if(pts>0) addPointEvent('steps_bonus',`${steps.toLocaleString()} pas = bonus`, pts);
+    inputSteps.value='';
+  });
+
+  function renderObjectives(){
+    const settings = getSettings();
+    uiObjectives.innerHTML = settings.pointRules.map(r=>`<div class="card" style="border-left:6px solid var(--bleu)">
+      <div style="font-weight:900">${r.label}</div>
+      <div class="muted">+${r.points} pts</div>
+      <div style="margin-top:6px"><button class="btn line" data-code="${r.code}">Marquer comme fait</button></div>
+    </div>`).join('');
+    uiObjectives.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+      const code=b.dataset.code; const rule=getSettings().pointRules.find(x=>x.code===code); if(!rule) return;
+      addPointEvent(code, rule.label, rule.points);
+    }));
+  }
+
+  function checkBadges(){
+    const settings=getSettings(); const u=getActiveUser();
+    const had=new Set(u.badges||[]); const unlocked=[];
+    settings.badges.forEach(b=>{ if(b.check(u) && !had.has(b.code)){ unlocked.push(b.code); }});
+    if(unlocked.length){ updateActiveUser(u=>{ u.badges=[...(u.badges||[]), ...unlocked]; u.log.unshift({t:nowStr(),code:'badge',label:'Badge(s) débloqué(s): '+unlocked.join(', '),delta:0}); return u; }); }
+    renderBadges();
+  }
+
+  function renderBadges(){
+    const settings=getSettings(); const u=getActiveUser(); const got=new Set(u.badges||[]);
+    uiBadges.innerHTML = settings.badges.map(b=>`<div class="badge ${got.has(b.code)?'unlocked':''}">
+      <div>${b.label}</div>
+      <div class="muted">${b.hint}</div>
+    </div>`).join('');
+  }
+
+  /**********************
+   * PROGRESS (LOG)
+   **********************/
+  // Rewards
+  function renderRewards(){
+    if(!uiRewards) return; const settings=getSettings(); const u=getActiveUser();
+    uiRewards.innerHTML = (settings.rewards||[]).map(r=>{
+      const score=u.score||0; const pct=Math.min(100, Math.floor((score/r.threshold)*100));
+      const unlocked = score>=r.threshold; const claimed=(u.claimedRewards||[]).includes(r.code);
+      return `<div class=\"card\">
+        <div style=\"display:flex;justify-content:space-between;align-items:center;gap:8px\">
+          <div>
+            <div style=\"font-weight:900\">${r.label}</div>
+            <div class=\"muted\">Seuil: ${r.threshold} pts – ${r.desc||''}</div>
+          </div>
+          <div><span class=\"chip\">${u.score||0} / ${r.threshold}</span></div>
+        </div>
+        <div class=\"bar\" style=\"margin:8px 0\"><i style=\"width:${pct}%\"></i></div>
+        <div style=\"display:flex;justify-content:flex-end;gap:8px\">
+          <button class=\"btn ${claimed?'ghost':'line'}\" data-reward=\"${r.code}\" ${!unlocked||claimed?'disabled':''}>${claimed?'Récompense validée':'Valider / Remettre'}</button>
+        </div>
+      </div>`;
+    }).join('');
+    uiRewards.querySelectorAll('button[data-reward]').forEach(btn=>btn.addEventListener('click',()=>{
+      const code=btn.dataset.reward; claimReward(code);
+    }));
+  }
+  function claimReward(code){
+    const settings=getSettings(); const r=(settings.rewards||[]).find(x=>x.code===code); if(!r) return;
+    const u=getActiveUser(); if((u.score||0)<r.threshold) return alert('Seuil non atteint');
+    updateActiveUser(user=>{ user.claimedRewards=[...(user.claimedRewards||[]), code]; user.log.unshift({t:nowStr(),code:'reward',label:`Récompense validée: ${r.label}`,delta:0}); return user; });
+  }
+
+  const uiLog = document.getElementById('ui-log');
+  const btnManualAdjust = document.getElementById('btnManualAdjust');
+  const btnPrint = document.getElementById('btnPrint');
+  if(btnPrint){ btnPrint.addEventListener('click',()=>window.print()); }
+
+  btnManualAdjust.addEventListener('click',()=>{
+    const reason = document.getElementById('input-manual-reason').value.trim()||'Ajustement';
+    const delta = +document.getElementById('input-manual-points').value; if(!isFinite(delta)) return;
+    addPointEvent('manual', reason, delta);
+    document.getElementById('input-manual-reason').value='';
+    document.getElementById('input-manual-points').value='0';
+  });
+
+  function renderLog(){
+    const u=getActiveUser();
+    uiLog.innerHTML = (u.log||[]).slice(0,100).map(e=>`<tr><td>${e.t}</td><td>${e.label}</td><td class="right">${e.delta>0?'+':''}${e.delta}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">Aucun événement</td></tr>';
+  }
+
+  /**********************
+   * SETTINGS / RULES
+   **********************/
+  const uiPointRules = document.getElementById('ui-point-rules');
+  const inputRatioSteps = document.getElementById('input-ratio-steps');
+  const ratioStepsLabel = document.getElementById('ratioSteps');
+  const btnSaveSettings = document.getElementById('btnSaveSettings');
+
+  function renderRules(){
+    const s=getSettings();
+    uiPointRules.innerHTML = s.pointRules.map((r,i)=>`<tr>
+      <td style="width:55%"><input data-idx="${i}" data-k="label" value="${r.label}"/></td>
+      <td style="width:25%"><input type="number" data-idx="${i}" data-k="points" value="${r.points}"/></td>
+      <td class="right"><button class="btn ghost" data-idx="${i}" data-k="del">Supprimer</button></td>
+    </tr>`).join('');
+    inputRatioSteps.value = s.stepsPer1000;
+    ratioStepsLabel.textContent = s.stepsPer1000;
+    // bind edits
+    uiPointRules.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{
+      const i=+inp.dataset.idx; const k=inp.dataset.k; const s=getSettings();
+      s.pointRules[i][k] = (k==='points')? +inp.value : inp.value; saveSettings(s);
+      renderObjectives();
+    }));
+    uiPointRules.querySelectorAll('button[data-k="del"]').forEach(btn=>btn.addEventListener('click',()=>{
+      const i=+btn.dataset.idx; const s=getSettings(); s.pointRules.splice(i,1); saveSettings(s); renderRules();
+
+  // Coach mode
+  const btnCoachMode = document.getElementById('btnCoachMode');
+  const uiCoach = document.getElementById('ui-coach');
+  if(btnCoachMode){ btnCoachMode.addEventListener('click',()=>{ renderCoachBoard(); openModal('modalCoach'); }); }
+  function renderCoachBoard(){
+    const users = Object.values(getUsers());
+    users.sort((a,b)=>(b.score||0)-(a.score||0));
+    uiCoach.innerHTML = users.map(u=>{
+      const initials = (u.name||'').split(' ').map(p=>p[0]).join('').slice(0,3).toUpperCase() || '??';
+      return `<tr><td>${initials}</td><td class="right">${u.score||0}</td></tr>`;
+    }).join('') || '<tr><td colspan="2" class="muted">Aucun participant</td></tr>';
+  } renderObjectives();
+    }));
+  }
+  btnSaveSettings.addEventListener('click',()=>{
+    const s=getSettings(); s.stepsPer1000 = +inputRatioSteps.value || s.stepsPer1000; saveSettings(s); ratioStepsLabel.textContent=s.stepsPer1000; alert('Paramètres enregistrés');
+  });
+
+  /**********************
+   * INIT / REFRESH
+   **********************/
+  function refreshUI(){
+    const u=getActiveUser(); currentUserName.textContent=u.name||'Invité'; uiTotalScore.textContent=u.score||0; renderLog(); renderBadges(); renderObjectives(); renderMap(); renderRewards(); checkBadges();
+  }
+
+  // First-run: ensure structures exist
+  saveSettings(getSettings()); getMap(); getUsers();
+  // Demo seed (only if no sectors yet)
+  (function seed(){ const map=getMap(); if(map.sectors.length) return; map.sectors=[
+    {id:uid(),name:'Commerce',color:'linear-gradient(135deg,var(--orange),#d17a00)',companies:[{id:uid(),name:'Boutik & Co',contact:'Stand A12',offers:[]}]},
+    {id:uid(),name:'Industrie',color:'linear-gradient(135deg,var(--vert),#7ba518)',companies:[]},
+    {id:uid(),name:'Numérique',color:'linear-gradient(135deg,var(--violet),#8a1449)',companies:[{id:uid(),name:'Dev4Basque',contact:'dev@exemple.eu',offers:[]}]}]; saveMap(map);}());
+
+  // Hook offer save
+  document.getElementById('btnSaveOffer').addEventListener('click',()=>{});
+
+  refreshUI();
+  renderRules();
+  </script>
+</body>
+</html>
