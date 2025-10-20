@@ -1,939 +1,495 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Synchro-Board - Outil d'Analyse Stratégique</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>🎮 GAME OF JOBS – Forum de l'Emploi</title>
     <style>
-        :root {
-            --bg-color: #f4f7fa;
-            --main-bg: #ffffff;
-            --sidebar-bg: #2c3e50;
-            --sidebar-text: #ecf0f1;
-            --header-color: #3498db;
-            --border-color: #e0e0e0;
-            --shadow: 0 4px 6px rgba(0,0,0,0.05);
-            --text-dark: #34495e;
-            --text-light: #7f8c8d;
-            --status-todo: #3498db;
-            --status-inprogress: #f1c40f;
-            --status-done: #2ecc71;
-            --status-blocked: #e74c3c;
-            --status-eval: #f1c40f;
-            --status-accepted: #2ecc71;
-            --status-refused: #e74c3c;
-        }
-
-        /* --- Structure Générale --- */
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&display=swap');
+        
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            margin: 0; display: flex; height: 100vh; overflow: hidden; background-color: var(--bg-color); color: var(--text-dark);
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Nunito', Arial, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(23,23,24,0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(243,146,0,0.05) 0%, transparent 50%),
+                linear-gradient(45deg, transparent 49%, rgba(23,23,24,0.02) 50%, transparent 51%);
+            color: #171718;
+            overflow-x: hidden;
+            line-height: 1.6;
+            position: relative;
         }
-        #sidebar { width: 280px; background-color: var(--sidebar-bg); color: var(--sidebar-text); padding: 20px; display: flex; flex-direction: column; flex-shrink: 0; }
-        #main-content { flex-grow: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 98px,
+                    rgba(23,23,24,0.01) 100px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 98px,
+                    rgba(23,23,24,0.01) 100px
+                );
+            pointer-events: none;
+            z-index: -1;
+        }
 
-        /* --- Barre Latérale (Collaborateurs) --- */
-        #sidebar h1 { font-size: 1.6em; margin: 0 0 20px 0; text-align: center; font-weight: 600; }
-        #collaborator-list { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; }
-        #collaborator-list li { padding: 12px 15px; margin-bottom: 8px; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; border-left: 4px solid transparent; }
-        #collaborator-list li:hover { background-color: #34495e; }
-        #collaborator-list li.active { background-color: var(--header-color); font-weight: 600; }
-        #add-collaborator-btn { background-color: var(--header-color); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-size: 1em; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-        /* --- Contenu Principal --- */
-        #header { padding: 15px 30px; background-color: var(--main-bg); border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow); z-index: 10; }
-        #header h2 { margin: 0; font-size: 1.8em; }
-        #view-switcher { padding: 20px 30px 0 30px; background-color: var(--bg-color); }
-        .tabs { display: flex; gap: 10px; border-bottom: 1px solid var(--border-color); }
-        .tab { padding: 10px 20px; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 500; color: var(--text-light); }
-        .tab.active { color: var(--header-color); border-bottom: 3px solid var(--header-color); }
-        
-        .view { display: none; padding: 20px 30px; }
-        .view.active { display: block; }
-        
-        /* --- Styles Communs aux Vues --- */
-        .view-container { display: flex; gap: 20px; height: calc(100vh - 150px); }
-        .sidebar-container { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; }
-        .sidebar-container h3 { margin-top: 0; }
-        .sidebar-list { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; }
-        .sidebar-list li { padding: 10px; margin-bottom: 5px; border-radius: 5px; cursor: pointer; border: 1px solid var(--border-color); background: var(--main-bg); }
-        .sidebar-list li.active { background-color: #eaf5ff; border-color: var(--header-color); }
-        .add-item-btn { width: 100%; margin-top: 10px; padding: 10px; background-color: var(--status-done); color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .detail-container { flex-grow: 1; background-color: var(--main-bg); padding: 20px; border-radius: 8px; box-shadow: var(--shadow); overflow-y: auto; }
-        .detail-field { margin-bottom: 15px; }
-        .detail-field label { display: block; font-weight: 600; margin-bottom: 5px; }
-        .detail-field input, .detail-field textarea { width: 98%; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; font-family: inherit; font-size: 1em; }
-        .detail-field textarea { min-height: 80px; resize: vertical; }
-        
-        /* --- Styles spécifiques (Feuille de Route, CR, Propositions) --- */
-        .roadmap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .roadmap-grid .detail-field.full { grid-column: span 2; }
-        .task-list { list-style: none; padding: 0; margin: 0; }
-        .task { background-color: #fdfdfd; border: 1px solid var(--border-color); padding: 10px; margin-bottom: 8px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .task.status-a-faire { border-left: 4px solid var(--status-todo); }
-        .task.status-en-cours { border-left: 4px solid var(--status-inprogress); }
-        .task.status-termine { border-left: 4px solid var(--status-done); }
-        .task.status-bloque { border-left: 4px solid var(--status-blocked); }
-        .task-controls { display: flex; align-items: center; gap: 10px; }
-        .task-status { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); }
-        .delete-task-btn { background: none; border: none; cursor: pointer; color: #999; font-size: 1.5em; line-height: 1; }
-        #add-task-form { display: flex; gap: 10px; margin-top: 15px; }
-        #new-task-input { flex-grow: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; }
-        #add-task-btn { padding: 8px 15px; border: none; background-color: var(--status-todo); color: white; border-radius: 5px; cursor: pointer; }
-        #decision-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        #decision-table th, #decision-table td { border: 1px solid var(--border-color); padding: 8px; text-align: left; }
-        #decision-table th { background-color: #f8f9fa; }
-        #decision-table input { width: 95%; border: none; }
-        .delete-row-btn { cursor: pointer; color: var(--status-refused); }
-        .proposal-item-header { display: flex; justify-content: space-between; font-weight: 600; color: var(--text-dark); }
-        .proposal-item-details { font-size: 0.85em; color: var(--text-light); margin-top: 4px; }
-        .proposal-score { font-size: 1.1em; font-weight: bold; }
-        .status-badge { padding: 3px 8px; border-radius: 12px; font-size: 0.8em; color: white; }
-        .status-badge.en-evaluation { background-color: var(--status-eval); }
-        .status-badge.accepte { background-color: var(--status-accepted); }
-        .status-badge.refuse { background-color: var(--status-refused); }
-        .criterion { background-color: var(--main-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 15px; }
-        .criterion-header { display: flex; justify-content: space-between; align-items: center; }
-        .criterion-header label { font-weight: 600; flex-grow: 1; font-size: 0.9em; }
-        .criterion-score { display: flex; align-items: center; gap: 10px; }
-        .criterion-score input[type="range"] { width: 120px; }
-        .criterion-score span { font-weight: bold; width: 40px; text-align: center; }
-        .summary-section { margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px; }
-        .summary-grid { display: flex; justify-content: space-between; align-items: center; }
-        .total-score h3 { margin: 0; font-size: 1.2em; }
-        .total-score p { margin: 5px 0 0; font-size: 2.5em; font-weight: bold; color: var(--header-color); }
-        .decision-actions button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 600; margin-left: 10px; }
-        .btn-eval { background-color: var(--status-eval); }
-        .btn-accept { background-color: var(--status-accepted); color: white; }
-        .btn-refuse { background-color: var(--status-refused); color: white; }
-        
-        /* --- Styles Enregistreur Intelligent --- */
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #171718 0%, #2c2c2e 100%);
+            color: white;
+            padding: 60px 40px;
+            border: none;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 0;
+            box-shadow: 
+                0 8px 32px rgba(23,23,24,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(45deg, transparent 30%, rgba(243,146,0,0.1) 50%, transparent 70%),
+                repeating-linear-gradient(
+                    -45deg,
+                    transparent,
+                    transparent 20px,
+                    rgba(255,255,255,0.02) 22px
+                );
+            z-index: 1;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, #f39200 0%, #95c11f 25%, #2897d5 50%, #d60b52 75%, #a3195b 100%);
+            z-index: 3;
+        }
+
+        .header h1 {
+            font-family: 'Oswald', Arial, sans-serif;
+            font-size: 3.8rem;
+            font-weight: 700;
+            margin: 0 0 20px 0;
+            position: relative;
+            z-index: 2;
+            letter-spacing: 0.05em;
+            color: #f39200;
+            text-transform: uppercase;
+            text-shadow: 
+                3px 3px 0 #171718,
+                6px 6px 0 rgba(23,23,24,0.3),
+                0 0 30px rgba(243,146,0,0.5);
+            transform: perspective(500px) rotateX(15deg);
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            margin: 25px 0 20px 0;
+            position: relative;
+            z-index: 2;
+            line-height: 1.5;
+            font-weight: 600;
+            color: white;
+        }
+
+        .header .subtitle div {
+            margin: 10px 0;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border-radius: 0;
+            display: inline-block;
+            color: white;
+            box-shadow: 
+                0 4px 15px rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            border: none;
+            border-left: 6px solid #d60b52;
+            backdrop-filter: blur(10px);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .header .subtitle div:nth-child(2) {
+            border-left-color: #2897d5;
+            margin-left: 15px;
+            transform: rotate(-1deg);
+        }
+
+        .header .subtitle div:nth-child(3) {
+            border-left-color: #95c11f;
+            margin-left: 30px;
+            transform: rotate(1deg);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            margin: 20px 0 0 0;
+            position: relative;
+            z-index: 2;
+            color: #171718;
+            font-weight: 600;
+            background: #f8f9fa;
+            padding: 15px 30px;
+            display: inline-block;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 2px solid #f39200;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(23,23,24,0.8) 0%, rgba(44,44,46,0.8) 100%);
+            backdrop-filter: blur(10px);
+            border-top: 3px solid #f39200;
+            border-bottom: 3px solid #f39200;
+        }
+
+        .nav-btn {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 0;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: 'Oswald', Arial, sans-serif;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 4px 15px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(243,146,0,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .nav-btn:hover::before {
+            left: 100%;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            background: linear-gradient(135deg, #f39200 0%, #d17a00 100%);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 
+                0 8px 25px rgba(243,146,0,0.4),
+                0 0 20px rgba(243,146,0,0.3);
+            border-color: #171718;
+        }
+
+        .page {
+            display: none;
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,249,250,0.95) 100%);
+            border-radius: 0;
+            padding: 40px;
+            box-shadow: 
+                0 12px 40px rgba(23,23,24,0.15),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            margin-bottom: 30px;
+            border: none;
+            border-left: 8px solid #f39200;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #f39200 0%, #95c11f 25%, #2897d5 50%, #d60b52 75%, #a3195b 100%);
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes gentleFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .game-sector, .special-sector {
+            width: 140px;
+            height: 140px;
+            border-radius: 0;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            box-shadow: 
+                0 8px 25px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.2),
+                inset 0 -1px 0 rgba(0,0,0,0.2);
+            border: 3px solid #171718;
+            transform: perspective(1000px) rotateX(5deg);
+        }
+
+        .game-sector::before, .special-sector::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(255,255,255,0.05) 12px
+                );
+            pointer-events: none;
+        }
+
+        .game-sector:hover, .special-sector:hover {
+            transform: perspective(1000px) rotateX(0deg) translateY(-8px) scale(1.08);
+            box-shadow: 
+                0 15px 40px rgba(0,0,0,0.4),
+                0 0 30px rgba(243,146,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        .game-sector .sector-icon, .special-sector .sector-icon {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .game-sector h4, .special-sector h4 {
+            margin: 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .sector-controls {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .sector-controls button {
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .empty-state { text-align: center; padding: 50px; color: var(--text-light); }
-        
-        /* --- Modal --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6); z-index: 1000;
-            display: none; justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background: white; padding: 30px; border-radius: 8px;
-            width: 90%; max-width: 500px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-    </style>
-</head>
-<body>
-    <aside id="sidebar">
-        <h1>Synchro-Board</h1>
-        <ul id="collaborator-list"></ul>
-        <button id="add-collaborator-btn">+ Nouveau Collaborateur</button>
-    </aside>
-
-    <main id="main-content">
-        <header id="header"><h2 id="collaborator-title"></h2></header>
-        <div id="view-switcher">
-            <div class="tabs">
-                <div class="tab active" data-view="roadmaps-view">Feuilles de Route</div>
-                <div class="tab" data-view="proposals-view">Propositions Externes</div>
-                <div class="tab" data-view="cr-view">CR & Décisions</div>
-            </div>
-        </div>
-        <div id="main-view-container">
-            <div id="roadmaps-view" class="view active view-container"></div>
-            <div id="proposals-view" class="view view-container"></div>
-            <div id="cr-view" class="view view-container"></div>
-            <div id="empty-state-view" class="view"></div>
-        </div>
-    </main>
-    
-    <!-- Modal pour les entrées utilisateur -->
-    <div id="input-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h3 id="input-modal-title" class="text-lg font-semibold mb-4"></h3>
-            <input type="text" id="input-modal-field" class="w-full p-2 border border-gray-300 rounded-md">
-            <div class="text-right mt-6">
-                <button id="input-modal-cancel" class="px-4 py-2 bg-gray-200 rounded-md mr-2">Annuler</button>
-                <button id="input-modal-ok" class="px-4 py-2 bg-blue-600 text-white rounded-md">OK</button>
-            </div>
-        </div>
-    </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // --- State Management & Definitions ---
-    let state = {};
-    
-    // --- Variables pour l'enregistreur intelligent ---
-    let mediaRecorder;
-    let audioChunks = [];
-    let recognition;
-    let isRecording = false;
-    let finalTranscript = '';
-
-    const PROPOSAL_CRITERIA = {
-        scoring: [
-            { key: 'c1', label: '1. Alignement avec les missions' },
-            { key: 'c2', label: '2. Cohérence avec les axes stratégiques et le projet associatif' },
-            { key: 'c3', label: "3. Renforcement de l'identité de la ML" },
-            { key: 'c4', label: '4. Public cible' },
-            { key: 'c5', label: '5. Impact potentiel sur les jeunes' },
-            { key: 'c6', label: '6. Modalités pédagogiques, caractère innovant, participation des jeunes, support au diagnostic' },
-            { key: 'c7', label: "7. Nombre de bénéficiaires potentiels/ Potentiel d'extension à d'autres groupes" },
-            { key: 'c8', label: '8. Faisabilité RH nombre de salariés mobilisés, impact sur la charge de travail' },
-            { key: 'c9', label: '9. Faisabilité financière cout total estimé Potentiel de financement externe' },
-        ],
-        final_comment: { key: 'c10', label: '10. Avis référent interne' }
-    };
-
-    function saveState() {
-        localStorage.setItem('synchroBoardStrategicState', JSON.stringify(state));
-    }
-
-    function loadState() {
-        const savedState = localStorage.getItem('synchroBoardStrategicState');
-        if (savedState) {
-            state = JSON.parse(savedState);
-        } else {
-            const initialCollabId = `collab-${Date.now()}`;
-            state = {
-                collaborators: {
-                    [initialCollabId]: {
-                        id: initialCollabId, name: "Premier Collaborateur",
-                        roadmaps: [], activeRoadmapId: null,
-                        proposals: {}, activeProposalId: null, proposalFilter: 'all',
-                        crs: [], activeCrId: null
-                    }
-                },
-                activeCollaboratorId: initialCollabId,
-                activeView: 'roadmaps-view',
-            };
-        }
-    }
-
-    // --- Helper & Utility Functions ---
-    function showView(viewId) {
-        document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-        const viewEl = document.getElementById(viewId);
-        if (viewEl) viewEl.style.display = 'block';
-        document.getElementById('view-switcher').style.display = (viewId === 'empty-state-view') ? 'none' : 'block';
-    }
-
-    function calculateRawScore(proposal) { return PROPOSAL_CRITERIA.scoring.reduce((sum, crit) => sum + (Number(proposal.criteria[crit.key]?.s) || 0), 0); }
-    function getDisplayScore(rawScore) { const max = PROPOSAL_CRITERIA.scoring.length * 2; return max === 0 ? 0 : (rawScore / max) * 20; }
-    function createTaskElement(task) { 
-        const status = task.status || 'À faire';
-        const statusClass = status.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '');
-        return `<li class="task status-${statusClass}" data-task-id="${task.id}"><span>${task.text}</span><div class="task-controls"><select class="task-status"><option value="À faire" ${status === 'À faire' ? 'selected' : ''}>À faire</option><option value="En cours" ${status === 'En cours' ? 'selected' : ''}>En cours</option><option value="Terminé" ${status === 'Terminé' ? 'selected' : ''}>Terminé</option><option value="Bloqué" ${status === 'Bloqué' ? 'selected' : ''}>Bloqué</option></select><button class="delete-task-btn" title="Supprimer">&times;</button></div></li>`; 
-    }
-
-    // --- Main Render Functions ---
-    function render() {
-        saveState();
-        renderCollaborators();
-        renderActiveView();
-    }
-
-    function renderCollaborators() { 
-        const listEl = document.getElementById('collaborator-list');
-        listEl.innerHTML = '';
-        if (Object.keys(state.collaborators).length === 0) {
-            showView('empty-state-view'); return;
-        }
-        for (const collabId in state.collaborators) {
-            const collaborator = state.collaborators[collabId];
-            const li = document.createElement('li');
-            li.textContent = collaborator.name;
-            li.dataset.collaboratorId = collaborator.id;
-            if (collaborator.id === state.activeCollaboratorId) li.classList.add('active');
-            li.addEventListener('click', () => { state.activeCollaboratorId = collaborator.id; render(); });
-            listEl.appendChild(li);
-        }
-    }
-
-    function renderActiveView() {
-        const activeCollaborator = state.collaborators[state.activeCollaboratorId];
-        if (!activeCollaborator) {
-            showView('empty-state-view');
-            document.getElementById('collaborator-title').textContent = '';
-            return;
-        }
-        
-        document.getElementById('collaborator-title').textContent = `Suivi de : ${activeCollaborator.name}`;
-        showView(state.activeView);
-        
-        document.querySelectorAll('.tab').forEach(t => {
-            t.classList.toggle('active', t.dataset.view === state.activeView);
-        });
-
-        switch (state.activeView) {
-            case 'roadmaps-view': renderRoadmapsView(activeCollaborator); break;
-            case 'proposals-view': renderProposalsView(activeCollaborator); break;
-            case 'cr-view': renderCRsView(activeCollaborator); break;
-        }
-    }
-
-    // --- View-Specific Renderers ---
-    function renderRoadmapsView(collaborator) {
-        const container = document.getElementById('roadmaps-view');
-        container.innerHTML = `
-            <aside class="sidebar-container">
-                <h3>Périodes</h3>
-                <ul class="sidebar-list" id="roadmap-list"></ul>
-                <button class="add-item-btn" id="add-roadmap-btn">+ Nouvelle Feuille de Route</button>
-            </aside>
-            <section class="detail-container" id="roadmap-detail-container"></section>`;
-        
-        const listEl = document.getElementById('roadmap-list');
-        (collaborator.roadmaps || []).forEach(roadmap => {
-            const li = document.createElement('li');
-            li.textContent = roadmap.period;
-            li.dataset.roadmapId = roadmap.id;
-            if (roadmap.id === collaborator.activeRoadmapId) li.classList.add('active');
-            li.addEventListener('click', () => { collaborator.activeRoadmapId = roadmap.id; render(); });
-            listEl.appendChild(li);
-        });
-        
-        const roadmap = (collaborator.roadmaps || []).find(r => r.id === collaborator.activeRoadmapId);
-        const detailEl = document.getElementById('roadmap-detail-container');
-        if (!roadmap) {
-            detailEl.innerHTML = '<div class="empty-state"><p>Sélectionnez une feuille de route.</p></div>';
-            return;
-        }
-        
-        const tasksHtml = (roadmap.priorityTasks || []).map(createTaskElement).join('');
-        detailEl.innerHTML = `
-            <div class="roadmap-grid">
-                <div class="detail-field half"><label>Période</label><input type="text" data-field="period" value="${roadmap.period || ''}"></div>
-                <div class="detail-field half"><label>Prochaine rencontre</label><input type="text" data-field="nextMeeting" value="${roadmap.nextMeeting || ''}"></div>
-                <div class="detail-field full">
-                    <label>Objectifs principaux</label>
-                    <textarea data-field="mainObjectives">${roadmap.mainObjectives || ''}</textarea>
-                </div>
-                <div class="detail-field full">
-                    <label>Tâches prioritaires</label>
-                    <ul class="task-list">${tasksHtml}</ul>
-                    <form id="add-task-form"><input type="text" id="new-task-input" placeholder="Nouvelle tâche..." required><button type="submit" id="add-task-btn">+</button></form>
-                </div>
-                <div class="detail-field full"><label>Rendez-vous / réunions importantes</label><textarea data-field="meetings">${roadmap.meetings || ''}</textarea></div>
-                <div class="detail-field full"><label>Suivi des actions précédentes</label><textarea data-field="followUp">${roadmap.followUp || ''}</textarea></div>
-                <div class="detail-field full"><label>Observations / ajustements à prévoir</label><textarea data-field="observations">${roadmap.observations || ''}</textarea></div>
-            </div>`;
-        attachRoadmapListeners(roadmap);
-    }
-    
-    function renderCRsView(collaborator) {
-        const container = document.getElementById('cr-view');
-        container.innerHTML = `
-            <aside class="sidebar-container">
-                <h3>Historique des CR</h3>
-                <ul class="sidebar-list" id="cr-list"></ul>
-                <button class="add-item-btn" id="add-cr-btn">+ Nouveau CR</button>
-            </aside>
-            <section class="detail-container" id="cr-detail-container"></section>`;
-
-        const listEl = document.getElementById('cr-list');
-        (collaborator.crs || []).sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(cr => {
-            const li = document.createElement('li');
-            li.textContent = `CR du ${new Date(cr.date).toLocaleDateString('fr-FR')}`;
-            li.dataset.crId = cr.id;
-            if (cr.id === collaborator.activeCrId) li.classList.add('active');
-            li.addEventListener('click', () => { collaborator.activeCrId = cr.id; render(); });
-            listEl.appendChild(li);
-        });
-
-        const cr = (collaborator.crs || []).find(c => c.id === collaborator.activeCrId);
-        const detailEl = document.getElementById('cr-detail-container');
-        if (!cr) {
-            detailEl.innerHTML = '<div class="empty-state"><p>Sélectionnez ou créez un compte-rendu.</p></div>';
-            return;
+            border: 2px solid rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.9);
+            color: #171718;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        const decisionsHtml = (cr.decisions || []).map((d, i) => `<tr data-decision-index="${i}"><td><input type="text" data-field="decision" value="${d.decision || ''}"></td><td><input type="text" data-field="owner" value="${d.owner || ''}"></td><td><input type="date" data-field="dueDate" value="${d.dueDate || ''}"></td><td><span class="delete-row-btn" title="Supprimer">&times;</span></td></tr>`).join('');
-
-        detailEl.innerHTML = `
-            <div class="roadmap-grid">
-                <div class="detail-field half"><label>Date</label><input type="date" data-field="date" value="${cr.date}"></div>
-                <div class="detail-field half"><label>Animé par</label><input type="text" data-field="animator" value="${cr.animator || ''}"></div>
-                <div class="detail-field half"><label>Présents</label><textarea data-field="attendees">${cr.attendees || ''}</textarea></div>
-                <div class="detail-field half"><label>Absents</label><textarea data-field="absentees">${cr.absentees || ''}</textarea></div>
-            </div>
-            
-            <div class="w-full bg-white rounded-2xl space-y-6 mt-6 border-t pt-6">
-                <h3 class="text-xl font-semibold text-gray-700">Enregistreur Intelligent</h3>
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 p-4 bg-gray-50 rounded-xl">
-                    <button id="recordButton" class="w-full sm:w-auto flex items-center justify-center gap-3 px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
-                        <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-                        <span id="recordButtonText">Démarrer l'enregistrement</span>
-                    </button>
-                    <div id="status" class="flex items-center gap-2 text-gray-600">
-                        <div id="statusIndicator" class="w-3 h-3 bg-gray-400 rounded-full"></div>
-                        <span id="statusText">Prêt</span>
-                    </div>
-                </div>
-                
-                <div id="audioPlayerContainer" class="hidden">
-                     <audio id="audioPlayer" controls class="w-full"></audio>
-                </div>
-
-                <div class="grid md:grid-cols-2 gap-6">
-                    <div>
-                        <h4 class="text-lg font-semibold text-gray-700 mb-2">Transcription</h4>
-                        <div id="transcriptContainer" class="h-48 p-4 bg-gray-50 border border-gray-200 rounded-lg overflow-y-auto">
-                            <p id="transcript" class="text-gray-600 whitespace-pre-wrap">${cr.transcript || 'La transcription apparaîtra ici...'}</p>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex items-center justify-between gap-2 mb-2">
-                            <h4 class="text-lg font-semibold text-gray-700">Compte Rendu IA</h4>
-                            <button id="summarizeButton" class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-sm hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" ${!cr.transcript ? 'disabled' : ''}>Générer</button>
-                        </div>
-                        <div id="summaryContainer" class="h-48 p-4 bg-gray-50 border border-gray-200 rounded-lg overflow-y-auto flex items-center justify-center">
-                            <div id="summaryLoader" class="loader hidden"></div>
-                            <p id="summary" class="text-gray-600 whitespace-pre-wrap">${cr.summary || 'Le résumé généré apparaîtra ici.'}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-3 pt-4">
-                    <div class="flex items-center justify-between">
-                        <h4 class="text-lg font-semibold text-gray-700">Rapport d'Équipe Formaté</h4>
-                        <button id="teamReportButton" class="px-4 py-2 bg-purple-500 text-white font-semibold rounded-lg shadow-sm hover:bg-purple-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" ${!cr.summary ? 'disabled' : ''}>Créer le Rapport</button>
-                    </div>
-                    <div id="teamReportContainer" class="h-64 p-4 bg-blue-50 border border-blue-200 rounded-lg overflow-y-auto flex items-center justify-center">
-                        <div id="teamReportLoader" class="loader hidden"></div>
-                        <pre id="teamReport" class="text-gray-800 whitespace-pre-wrap w-full font-sans">${cr.teamReport || 'Le rapport formaté apparaîtra ici...'}</pre>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="detail-field full mt-6">
-                <label>Relevé de décisions</label>
-                <table id="decision-table"><thead><tr><th>Décision</th><th>Porteur</th><th>Échéance</th><th></th></tr></thead><tbody>${decisionsHtml}</tbody></table>
-                <button id="add-decision-btn" class="add-item-btn" style="width:auto; margin-top:10px;">+ Ajouter décision</button>
-            </div>
-            `;
-        attachCRListeners(cr);
-    }
-
-    function renderProposalsView(collaborator) {
-        const container = document.getElementById('proposals-view');
-        container.innerHTML = `
-            <aside class="sidebar-container">
-                <h3>Propositions</h3>
-                <div style="padding: 0 0 10px 0;">
-                    <label for="filter-status">Filtrer:</label>
-                    <select id="filter-status" style="width:100%; padding: 5px; border-radius: 4px; border: 1px solid var(--border-color);">
-                        <option value="all">Toutes</option>
-                        <option value="En évaluation">En évaluation</option>
-                        <option value="Accepté">Accepté</option>
-                        <option value="Refusé">Refusé</option>
-                    </select>
-                </div>
-                <ul class="sidebar-list" id="proposal-list"></ul>
-                <button class="add-item-btn" id="add-proposal-btn">+ Nouvelle Proposition</button>
-            </aside>
-            <section class="detail-container" id="proposal-detail-container"></section>`;
-        
-        const listEl = document.getElementById('proposal-list');
-        const filterEl = document.getElementById('filter-status');
-        filterEl.value = collaborator.proposalFilter || 'all';
-
-        const filteredProposals = Object.values(collaborator.proposals || {}).filter(p => {
-            return filterEl.value === 'all' || p.status === filterEl.value;
-        });
-        filteredProposals.sort((a, b) => (calculateRawScore(b) - calculateRawScore(a)));
-
-        filteredProposals.forEach(p => {
-            const li = document.createElement('li');
-            li.dataset.proposalId = p.id;
-            if (p.id === collaborator.activeProposalId) li.classList.add('active');
-            const displayScore = getDisplayScore(calculateRawScore(p));
-            const statusClass = (p.status || 'En évaluation').toLowerCase().replace('é', 'e').replace(/\s+/g, '-');
-            li.innerHTML = `<div class="proposal-item-header"><span>${p.name}</span><span class="proposal-score">${displayScore.toFixed(1)}/20</span></div><div class="proposal-item-details"><span>${p.typology || ''}</span> | <span class="status-badge ${statusClass}">${p.status}</span></div>`;
-            li.addEventListener('click', () => { collaborator.activeProposalId = p.id; render(); });
-            listEl.appendChild(li);
-        });
-
-        const proposal = (collaborator.proposals || {})[collaborator.activeProposalId];
-        const detailEl = document.getElementById('proposal-detail-container');
-        if (!proposal) {
-            detailEl.innerHTML = '<div class="empty-state"><p>Sélectionnez une proposition pour l\'évaluer.</p></div>';
-            return;
+        .sector-controls button:hover {
+            background: #f39200;
+            color: white;
+            border-color: #f39200;
+            transform: scale(1.1);
         }
 
-        const criteriaHtml = PROPOSAL_CRITERIA.scoring.map(crit => {
-            const scoreData = proposal.criteria[crit.key] || {s: 0, c: ''};
-            return `<div class="criterion">
-                <div class="criterion-header">
-                    <label>${crit.label}</label>
-                    <div class="criterion-score"><input type="range" data-criterion="${crit.key}" min="0" max="2" step="0.5" value="${scoreData.s}"><span>${Number(scoreData.s).toFixed(1)}</span></div>
-                </div>
-            </div>`;
-        }).join('');
-        const finalCritData = proposal.criteria[PROPOSAL_CRITERIA.final_comment.key] || {c:''};
-        const displayScore = getDisplayScore(calculateRawScore(proposal));
-
-        detailEl.innerHTML = `
-            <div class="detail-field"><label>Nom de la proposition</label><input type="text" data-field="name" value="${proposal.name || ''}"></div>
-            <div class="detail-field"><label>Typologie</label><input type="text" data-field="typology" value="${proposal.typology || ''}"></div>
-            <h3>Évaluation des critères</h3>
-            ${criteriaHtml}
-            <div class="summary-section">
-                <h3>Synthèse & Décision</h3>
-                <div class="criterion">
-                    <label>${PROPOSAL_CRITERIA.final_comment.label}</label>
-                    <textarea class="criterion-comment" data-criterion="${PROPOSAL_CRITERIA.final_comment.key}" placeholder="Avis final du référent...">${finalCritData.c}</textarea>
-                </div>
-                <div class="summary-grid">
-                    <div class="total-score"><h3>Score Total</h3><p>${displayScore.toFixed(1)} / 20</p></div>
-                    <div class="decision-actions">
-                        <button class="btn-eval" data-status="En évaluation">En évaluation</button>
-                        <button class="btn-accept" data-status="Accepté">Accepter</button>
-                        <button class="btn-refuse" data-status="Refusé">Refuser</button>
-                    </div>
-                </div>
-            </div>`;
-        attachProposalListeners(proposal);
-    }
-
-    // --- Event Listeners ---
-    function attachRoadmapListeners(roadmap) {
-        const container = document.getElementById('roadmap-detail-container');
-        container.addEventListener('change', e => {
-            const field = e.target.dataset.field;
-            if (field) { 
-                roadmap[field] = e.target.value; 
-                if(field === 'period') render(); else saveState(); 
-            }
-            if (e.target.classList.contains('task-status')) {
-                const taskEl = e.target.closest('.task');
-                const taskId = taskEl.dataset.taskId;
-                const task = roadmap.priorityTasks.find(t => t.id === taskId);
-                if (task) {
-                    task.status = e.target.value;
-                    const statusClass = task.status.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '');
-                    taskEl.className = `task status-${statusClass}`;
-                    saveState();
-                }
-            }
-        });
-        container.addEventListener('click', e => {
-            if (e.target.classList.contains('delete-task-btn')) {
-                const taskId = e.target.closest('.task').dataset.taskId;
-                roadmap.priorityTasks = roadmap.priorityTasks.filter(t => t.id !== taskId);
-                render();
-            }
-        });
-        container.querySelector('#add-task-form').addEventListener('submit', e => {
-            e.preventDefault();
-            const input = e.target.querySelector('input');
-            if (input.value.trim()) {
-                if (!roadmap.priorityTasks) roadmap.priorityTasks = [];
-                roadmap.priorityTasks.push({ id: `task-${Date.now()}`, text: input.value.trim(), status: 'À faire' });
-                input.value = '';
-                render();
-            }
-        });
-    }
-
-    function attachCRListeners(cr) {
-        const container = document.getElementById('cr-detail-container');
-        if (!container) return;
-        
-        container.addEventListener('change', e => {
-            const field = e.target.dataset.field;
-            if (field && !e.target.closest('tr')) {
-                cr[field] = e.target.value;
-                if(field === 'date') render(); else saveState();
-            } else if (field) {
-                const index = e.target.closest('tr').dataset.decisionIndex;
-                if (cr.decisions && cr.decisions[index]) {
-                    cr.decisions[index][field] = e.target.value;
-                    saveState();
-                }
-            }
-        });
-        
-        container.addEventListener('click', e => {
-            if (e.target.id === 'add-decision-btn') {
-                if (!cr.decisions) cr.decisions = [];
-                cr.decisions.push({ decision: '', owner: '', dueDate: '' });
-                render();
-            }
-            if (e.target.classList.contains('delete-row-btn')) {
-                const index = e.target.closest('tr').dataset.decisionIndex;
-                if (cr.decisions) {
-                    cr.decisions.splice(index, 1);
-                    render();
-                }
-            }
-        });
-
-        const recordButton = container.querySelector('#recordButton');
-        const summarizeButton = container.querySelector('#summarizeButton');
-        const teamReportButton = container.querySelector('#teamReportButton');
-        
-        if (!recordButton) return;
-
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            recordButton.disabled = true;
-            recordButton.querySelector('#recordButtonText').textContent = "Navigateur non compatible";
+        .objective-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,249,250,0.9) 100%);
+            border: 3px solid #171718;
+            border-radius: 0;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 
+                0 6px 20px rgba(23,23,24,0.2),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            position: relative;
+            overflow: hidden;
         }
 
-        recordButton.onclick = async () => {
-            if (isRecording) {
-                stopIntelligentRecording();
-            } else {
-                await startIntelligentRecording(cr);
-            }
-        };
-
-        summarizeButton.onclick = async () => {
-            const transcriptText = finalTranscript.trim() || cr.transcript;
-            if (!transcriptText || transcriptText.length < 10) {
-                alert("La transcription est trop courte.");
-                return;
-            }
-            
-            const summaryLoader = container.querySelector('#summaryLoader');
-            const summaryEl = container.querySelector('#summary');
-            summaryEl.classList.add('hidden');
-            summaryLoader.classList.remove('hidden');
-            summarizeButton.disabled = true;
-
-            const prompt = `Tu es un assistant expert en rédaction de comptes rendus. Analyse la transcription suivante et génère un compte rendu clair et structuré en français. Le compte rendu doit inclure :\n1.  **Résumé principal**\n2.  **Points Clés**\n3.  **Actions à entreprendre** (si applicable)\n\nTranscription :\n---\n${transcriptText}\n---`;
-            
-            try {
-                const summaryText = await callGeminiAPI(prompt);
-                cr.summary = summaryText;
-                render();
-            } catch (error) {
-                summaryEl.textContent = "Erreur de génération.";
-                console.error(error);
-            } finally {
-                summaryLoader.classList.add('hidden');
-                summaryEl.classList.remove('hidden');
-                summarizeButton.disabled = false;
-            }
-        };
-        
-        teamReportButton.onclick = async () => {
-            const summaryText = cr.summary;
-            if (!summaryText || summaryText.length < 10) {
-                alert("Veuillez d'abord générer un compte rendu de base.");
-                return;
-            }
-            
-            const teamReportLoader = container.querySelector('#teamReportLoader');
-            const teamReportEl = container.querySelector('#teamReport');
-            teamReportEl.classList.add('hidden');
-            teamReportLoader.classList.remove('hidden');
-            teamReportButton.disabled = true;
-
-            const prompt = `En te basant sur le compte rendu suivant, transforme-le en un rapport d'équipe formel en Markdown. Inclue des placeholders pour la date, les participants, le sujet, l'ordre du jour, les décisions et les actions à suivre.\n\nCompte rendu initial :\n${summaryText}`;
-
-            try {
-                const reportText = await callGeminiAPI(prompt);
-                cr.teamReport = reportText;
-                 render();
-            } catch (error) {
-                teamReportEl.textContent = "Erreur de génération.";
-                console.error(error);
-            } finally {
-                teamReportLoader.classList.add('hidden');
-                teamReportEl.classList.remove('hidden');
-                teamReportButton.disabled = false;
-            }
-        };
-    }
-
-    function attachProposalListeners(proposal) {
-        const container = document.getElementById('proposal-detail-container');
-        container.addEventListener('change', e => {
-            const field = e.target.dataset.field;
-            if (field) {
-                proposal[field] = e.target.value;
-                if (field === 'name') render(); else saveState();
-            }
-            if (e.target.classList.contains('criterion-comment')) {
-                const critKey = e.target.dataset.criterion;
-                if (!proposal.criteria[critKey]) proposal.criteria[critKey] = {s:0, c:''};
-                proposal.criteria[critKey].c = e.target.value;
-                saveState();
-            }
-        });
-        container.addEventListener('input', e => {
-             if (e.target.type === 'range') {
-                const critKey = e.target.dataset.criterion;
-                if (!proposal.criteria[critKey]) proposal.criteria[critKey] = {s:0, c:''};
-                const score = parseFloat(e.target.value);
-                proposal.criteria[critKey].s = score;
-                
-                e.target.nextElementSibling.textContent = score.toFixed(1);
-                const totalScoreEl = container.querySelector('.total-score p');
-                if(totalScoreEl) {
-                    totalScoreEl.textContent = `${getDisplayScore(calculateRawScore(proposal)).toFixed(1)} / 20`;
-                }
-                saveState();
-            }
-        });
-        container.querySelector('.decision-actions').addEventListener('click', e => {
-            if (e.target.tagName === 'BUTTON') {
-                proposal.status = e.target.dataset.status;
-                render();
-            }
-        });
-    }
-
-    // --- Logique de l'enregistreur intelligent ---
-    async function startIntelligentRecording(cr) {
-        const container = document.getElementById('cr-detail-container');
-        if (!container) return;
-        
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.start();
-            audioChunks = [];
-            mediaRecorder.addEventListener("dataavailable", event => audioChunks.push(event.data));
-            mediaRecorder.addEventListener("stop", () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const player = container.querySelector('#audioPlayer');
-                if (player) {
-                    player.src = audioUrl;
-                    container.querySelector('#audioPlayerContainer').classList.remove('hidden');
-                }
-            });
-
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.lang = 'fr-FR';
-            recognition.interimResults = true;
-            recognition.continuous = true;
-            finalTranscript = '';
-            const transcriptEl = container.querySelector('#transcript');
-            if (transcriptEl) transcriptEl.textContent = '';
-            
-            recognition.onresult = (event) => {
-                let interimTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript + ' ';
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
-                    }
-                }
-                if (transcriptEl) transcriptEl.textContent = finalTranscript + interimTranscript;
-                cr.transcript = finalTranscript + interimTranscript;
-            };
-
-            recognition.onend = () => {
-                cr.transcript = finalTranscript;
-                saveState();
-            };
-            
-            recognition.start();
-            isRecording = true;
-            updateUIRecorder('recording');
-        } catch (error) {
-            console.error("Erreur d'accès au microphone:", error);
-            alert("Impossible d'accéder au microphone.");
+        .objective-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(243,146,0,0.1), transparent);
+            transition: left 0.6s ease;
         }
-    }
 
-    function stopIntelligentRecording() {
-        if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
-        if (recognition) recognition.stop();
-        isRecording = false;
-        updateUIRecorder('stopped');
-    }
-    
-    async function callGeminiAPI(prompt) {
-        let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-        const payload = { contents: chatHistory };
-        const apiKey = ""; // Gérée par l'environnement
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) throw new Error(`Erreur API: ${response.statusText}`);
-        const result = await response.json();
-        
-        if (result.candidates && result.candidates[0]?.content?.parts?.[0]?.text) {
-            return result.candidates[0].content.parts[0].text;
-        } else {
-            throw new Error("Réponse de l'API invalide.");
+        .objective-card:hover::before {
+            left: 100%;
         }
-    }
 
-    function updateUIRecorder(state) {
-        const container = document.getElementById('cr-detail-container');
-        if (!container) return;
-        
-        const recordButton = container.querySelector('#recordButton');
-        const recordButtonText = container.querySelector('#recordButtonText');
-        const micIcon = container.querySelector('#micIcon');
-        const statusIndicator = container.querySelector('#statusIndicator');
-        const statusText = container.querySelector('#statusText');
-        const summarizeButton = container.querySelector('#summarizeButton');
-
-        if (state === 'recording') {
-            recordButtonText.textContent = "Arrêter";
-            recordButton.classList.replace('bg-blue-600', 'bg-red-600');
-            micIcon.innerHTML = `<rect x="6" y="6" width="12" height="12"></rect>`;
-            statusText.textContent = 'Enregistrement...';
-            statusIndicator.className = `w-3 h-3 bg-red-500 rounded-full animate-pulse`;
-            summarizeButton.disabled = true;
-        } else { // stopped
-            recordButtonText.textContent = "Démarrer l'enregistrement";
-            recordButton.classList.replace('bg-red-600', 'bg-blue-600');
-            micIcon.innerHTML = `<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line>`;
-            statusText.textContent = 'Terminé';
-            statusIndicator.className = `w-3 h-3 bg-green-500 rounded-full`;
-            summarizeButton.disabled = false;
+        .objective-card:hover {
+            border-color: #f39200;
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 
+                0 12px 35px rgba(243,146,0,0.3),
+                0 0 20px rgba(243,146,0,0.2);
         }
-    }
 
-    // --- Modal Logic ---
-    let currentModalCallback = null;
-    const inputModal = document.getElementById('input-modal');
-    const inputModalTitle = document.getElementById('input-modal-title');
-    const inputModalField = document.getElementById('input-modal-field');
-    const inputModalOk = document.getElementById('input-modal-ok');
-    const inputModalCancel = document.getElementById('input-modal-cancel');
-
-    function showInputModal(title, callback) {
-        inputModalTitle.textContent = title;
-        inputModalField.value = '';
-        inputModal.style.display = 'flex';
-        inputModalField.focus();
-        currentModalCallback = callback;
-    }
-
-    inputModalOk.addEventListener('click', () => {
-        if (currentModalCallback && inputModalField.value.trim()) {
-            currentModalCallback(inputModalField.value.trim());
+        .objective-card.completed {
+            background: linear-gradient(135deg, #95c11f 0%, #7ba518 100%);
+            color: white;
+            border-color: #171718;
+            box-shadow: 
+                0 8px 30px rgba(149,193,31,0.4),
+                0 0 25px rgba(149,193,31,0.3);
+            transform: scale(1.05);
         }
-        inputModal.style.display = 'none';
-        currentModalCallback = null;
-    });
 
-    inputModalCancel.addEventListener('click', () => {
-        inputModal.style.display = 'none';
-        currentModalCallback = null;
-    });
-    
-    inputModal.addEventListener('click', (e) => {
-        if (e.target === inputModal) {
-            inputModal.style.display = 'none';
-            currentModalCallback = null;
+        .objective-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
         }
-    });
 
-    // --- Global Event Listeners ---
-    document.getElementById('add-collaborator-btn').addEventListener('click', () => {
-        showInputModal("Nom du nouveau collaborateur :", (name) => {
-            const newId = `collab-${Date.now()}`;
-            state.collaborators[newId] = { 
-                id: newId, 
-                name: name, 
-                roadmaps: [], activeRoadmapId: null,
-                proposals: {}, activeProposalId: null, proposalFilter: 'all',
-                crs: [], activeCrId: null
-            };
-            state.activeCollaboratorId = newId;
-            render();
-        });
-    });
+        .objective-card h4 {
+            margin: 10px 0;
+            font-size: 1rem;
+        }
 
-    document.querySelector('.tabs').addEventListener('click', e => { 
-        if (e.target.classList.contains('tab')) { 
-            state.activeView = e.target.dataset.view; 
-            render(); 
-        } 
-    });
-    
-    document.getElementById('main-view-container').addEventListener('click', e => {
-        const activeCollaborator = state.collaborators[state.activeCollaboratorId];
-        if (!activeCollaborator) return;
-        
-        if (e.target.id === 'add-roadmap-btn') {
-            showInputModal("Période de la feuille de route (ex: Semaine 29):", (period) => {
-                const newRoadmap = { id: `roadmap-${Date.now()}`, period: period, priorityTasks: [] };
-                if (!activeCollaborator.roadmaps) activeCollaborator.roadmaps = [];
-                activeCollaborator.roadmaps.push(newRoadmap);
-                activeCollaborator.activeRoadmapId = newRoadmap.id;
-                render();
-            });
+        .objective-points {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #f39200;
+            margin: 10px 0;
         }
-        if (e.target.id === 'add-cr-btn') {
-            const newCr = { 
-                id: `cr-${Date.now()}`, 
-                date: new Date().toISOString().split('T')[0], 
-                decisions: [], transcript: '', summary: '', teamReport: ''
-            };
-            if (!activeCollaborator.crs) activeCollaborator.crs = [];
-            activeCollaborator.crs.push(newCr);
-            activeCollaborator.activeCrId = newCr.id;
-            render();
-        }
-        if (e.target.id === 'add-proposal-btn') {
-            showInputModal("Nom de la nouvelle proposition :", (name) => {
-                const newId = `prop-${Date.now()}`;
-                if (!activeCollaborator.proposals) activeCollaborator.proposals = {};
-                activeCollaborator.proposals[newId] = {
-                    id: newId, name: name, status: "En évaluation",
-                    criteria: [...PROPOSAL_CRITERIA.scoring, PROPOSAL_CRITERIA.final_comment].reduce((acc, crit) => {
-                        acc[crit.key] = { s: 0, c: '' }; return acc;
-                    }, {})
-                };
-                activeCollaborator.activeProposalId = newId;
-                render();
-            });
-        }
-    });
 
-    document.getElementById('main-view-container').addEventListener('change', e => {
-        if (e.target.id === 'filter-status') {
-            if(state.collaborators[state.activeCollaboratorId]) {
-                state.collaborators[state.activeCollaboratorId].proposalFilter = e.target.value;
-                render();
-            }
+        .objective-card.completed .objective-points {
+            color: white;
         }
-    });
-    
-    // --- Initial Load ---
-    loadState();
-    Object.values(state.collaborators).forEach(c => {
-        if (!c.roadmaps) c.roadmaps = [];
-        if (!c.proposals) c.proposals = {};
-        if (!c.crs) c.crs = [];
-    });
-    render();
-});
-</script>
 
-</body>
-</html>
+        .objective-status {
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            border-radius: 15px;
+            background: #f8f9fa;
+            color: #6c757d;
+            display: inline-block;
+        }
+
+        .objective-card.completed .objective-status {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f39200 0%, #d17a00 100%);
+            color: white;
+            border: 3px solid #171718;
+            padding: 18px 36px;
+            border-radius: 0;
+            font-weight: 700;
+            font-family: 'Oswald', Arial, sans-serif;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 
+                0 8px 25px rgba(243,146,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 
+                0 12px 35px rgba(243,146,0,0.4),
+                0 0 30px rgba(243,146,0,0.3);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at center, rgba(23,23,24,0.8) 0%, rgba(23,23,24,0.9) 100%),
+                repeating-linear-gradient(
+                    45deg,
+                    transparent
