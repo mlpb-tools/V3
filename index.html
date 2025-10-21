@@ -1287,23 +1287,8 @@ function loadUserData() {
         const saved = localStorage.getItem('gameOfJobsUserData');
         if (saved) {
             userData = JSON.parse(saved);
-            // Charger le CV s'il existe
-            if (userData.cv) {
-                userCV = userData.cv;
-            }
             console.log('Données chargées avec succès');
         }
-    } catch (e) {
-        console.error('Erreur lors du chargement:', e);
-    }
-}
-            }
-            console.log('Données chargées avec succès');
-        }
-    } catch (e) {
-        console.error('Erreur lors du chargement:', e);
-    }
-}
     } catch (e) {
         console.error('Erreur lors du chargement:', e);
     }
@@ -2661,58 +2646,21 @@ function openQG() {
     openModal('QG Mission Locale', content);
 }
 
-// =============================================================================
-// GESTION DU CV - UPLOAD ET TÉLÉCHARGEMENT
-// =============================================================================
-
-let userCV = null; // Stockage du CV en mémoire
-
 function openCVOptions() {
     const content = `
         <h3 style="color: #f39200; margin-bottom: 20px;">📄 Mon CV</h3>
-        <p style="margin-bottom: 20px;">Gère ton CV pour le partager avec les recruteurs :</p>
-        
-        <!-- Zone d'upload du CV -->
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px dashed #e9ecef;">
-            <h4 style="color: #171718; margin: 0 0 15px 0;">📤 Importer mon CV</h4>
-            <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 15px;">
-                Formats acceptés : PDF, JPG, PNG, DOC, DOCX (Max 5 MB)
-            </p>
-            <input type="file" id="cvFileInput" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" 
-                   style="display: none;" onchange="handleCVUpload(event)">
-            <button onclick="document.getElementById('cvFileInput').click()" 
-                    style="background: #95c11f; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; width: 100%;">
-                ${userCV ? '🔄 Changer mon CV' : '📁 Sélectionner un fichier'}
-            </button>
-            ${userCV ? `
-                <div style="background: white; padding: 10px; border-radius: 8px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #171718;">
-                        <strong>📎 ${userCV.name}</strong>
-                        <br><small style="color: #6c757d;">${(userCV.size / 1024).toFixed(2)} KB</small>
-                    </span>
-                    <button onclick="removeCV()" style="background: #d60b52; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
-                        🗑️
-                    </button>
-                </div>
-            ` : ''}
-        </div>
-
-        <!-- Options de partage -->
+        <p style="margin-bottom: 20px;">Choisis comment tu veux partager ton CV avec les recruteurs :</p>
         <div style="display: flex; flex-direction: column; gap: 15px;">
-            <button onclick="downloadCV()" ${!userCV ? 'disabled' : ''} 
-                    style="background: ${!userCV ? '#6c757d' : '#2897d5'}; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: ${!userCV ? 'not-allowed' : 'pointer'}; font-weight: 600;">
-                ⬇️ Télécharger mon CV
+            <button onclick="downloadCV()" style="background: #2897d5; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; font-weight: 600;">
+                ⬇️ Télécharger mon CV (PDF)
             </button>
-            <button onclick="showEmailCVForm()" ${!userCV ? 'disabled' : ''} 
-                    style="background: ${!userCV ? '#6c757d' : '#95c11f'}; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: ${!userCV ? 'not-allowed' : 'pointer'}; font-weight: 600;">
+            <button onclick="emailCV()" style="background: #95c11f; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; font-weight: 600;">
                 📧 Envoyer mon CV par email
             </button>
-            <button onclick="generateCVQRCode()" ${!userCV ? 'disabled' : ''} 
-                    style="background: ${!userCV ? '#6c757d' : '#f39200'}; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: ${!userCV ? 'not-allowed' : 'pointer'}; font-weight: 600;">
-                📱 Générer un QR Code
+            <button onclick="shareCV()" style="background: #f39200; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; font-weight: 600;">
+                🔗 Partager le lien de mon CV
             </button>
         </div>
-        
         <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-top: 20px;">
             <p style="margin: 0; font-size: 0.9rem; color: #6c757d; text-align: center;">
                 💡 Conseil : Dépose ton CV dans les entreprises qui t'intéressent pour gagner +100 points !
@@ -2723,184 +2671,19 @@ function openCVOptions() {
     openModal('Mon CV', content);
 }
 
-function handleCVUpload(event) {
-    const file = event.target.files[0];
-    
-    if (!file) return;
-    
-    // Vérifier la taille (5 MB max)
-    const maxSize = 5 * 1024 * 1024; // 5 MB
-    if (file.size > maxSize) {
-        showNotification('❌ Le fichier est trop volumineux (max 5 MB)');
-        return;
-    }
-    
-    // Vérifier le type
-    const allowedTypes = [
-        'application/pdf',
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ];
-    
-    if (!allowedTypes.includes(file.type)) {
-        showNotification('❌ Format de fichier non accepté');
-        return;
-    }
-    
-    // Lire le fichier
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        userCV = {
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            data: e.target.result,
-            uploadDate: new Date().toISOString()
-        };
-        
-        // Sauvegarder dans userData
-        userData.cv = userCV;
-        saveUserData();
-        
-        showNotification(`✅ CV "${file.name}" importé avec succès !`);
-        
-        // Recharger le modal
-        openCVOptions();
-    };
-    
-    reader.readAsDataURL(file);
-}
-
-function removeCV() {
-    if (confirm('Êtes-vous sûr de vouloir supprimer votre CV ?')) {
-        userCV = null;
-        userData.cv = null;
-        saveUserData();
-        showNotification('🗑️ CV supprimé');
-        openCVOptions();
-    }
-}
-
 function downloadCV() {
-    if (!userCV) {
-        showNotification('❌ Aucun CV à télécharger');
-        return;
-    }
-    
-    // Créer un lien de téléchargement
-    const link = document.createElement('a');
-    link.href = userCV.data;
-    link.download = userCV.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
     showNotification('📄 CV téléchargé !');
     closeModal();
 }
 
-function showEmailCVForm() {
-    const content = `
-        <h3 style="color: #95c11f; margin-bottom: 20px;">📧 Envoyer mon CV par Email</h3>
-        <form onsubmit="sendCVByEmail(event)" style="display: flex; flex-direction: column; gap: 15px;">
-            <div>
-                <label for="cvEmailRecipient" style="display: block; margin-bottom: 5px; font-weight: 600;">Email du destinataire :</label>
-                <input type="email" id="cvEmailRecipient" required 
-                       style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;" 
-                       placeholder="recruteur@entreprise.fr">
-            </div>
-            <div>
-                <label for="cvEmailSubject" style="display: block; margin-bottom: 5px; font-weight: 600;">Objet :</label>
-                <input type="text" id="cvEmailSubject" required 
-                       style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;" 
-                       value="Candidature - ${userCV ? userCV.name : 'CV'}">
-            </div>
-            <div>
-                <label for="cvEmailMessage" style="display: block; margin-bottom: 5px; font-weight: 600;">Message :</label>
-                <textarea id="cvEmailMessage" rows="4" 
-                          style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem; resize: vertical;" 
-                          placeholder="Madame, Monsieur,\n\nVeuillez trouver ci-joint mon CV...">Madame, Monsieur,
-
-Veuillez trouver ci-joint mon CV pour le poste proposé.
-
-Dans l'attente de votre retour.
-
-Cordialement.</textarea>
-            </div>
-            <div style="background: #f8f9fa; padding: 10px; border-radius: 8px;">
-                <small style="color: #6c757d;">
-                    📎 Pièce jointe : <strong>${userCV ? userCV.name : 'Aucun fichier'}</strong>
-                </small>
-            </div>
-            <button type="submit" style="background: #95c11f; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600;">
-                📧 Envoyer le CV
-            </button>
-        </form>
-    `;
-    
-    openModal('Envoyer CV par Email', content);
-}
-
-function sendCVByEmail(event) {
-    event.preventDefault();
-    
-    const recipient = document.getElementById('cvEmailRecipient').value;
-    const subject = document.getElementById('cvEmailSubject').value;
-    const message = document.getElementById('cvEmailMessage').value;
-    
-    // Créer un mailto link (limitation : ne peut pas attacher de fichier via mailto)
-    // Dans une vraie application, il faudrait un backend
-    const mailtoLink = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
-    
-    window.location.href = mailtoLink;
-    
+function emailCV() {
+    showNotification('📧 CV envoyé par email !');
     closeModal();
-    showNotification(`📧 Email préparé pour ${recipient} !`);
-    
-    // Note : Le fichier devra être attaché manuellement
-    setTimeout(() => {
-        showNotification('💡 N\'oublie pas d\'attacher ton CV dans l\'email !');
-    }, 2000);
 }
 
-function generateCVQRCode() {
-    if (!userCV) return;
-    
-    const content = `
-        <h3 style="color: #f39200; margin-bottom: 20px;">📱 QR Code de mon CV</h3>
-        <p style="margin-bottom: 20px; color: #6c757d;">Scannez ce QR code pour accéder rapidement à votre CV</p>
-        
-        <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
-            <div id="qrcodeContainer" style="display: inline-block; padding: 20px; background: white; border: 2px solid #e9ecef; border-radius: 10px;">
-                <p style="color: #6c757d;">Génération du QR Code...</p>
-            </div>
-        </div>
-        
-        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-top: 20px;">
-            <p style="margin: 0; font-size: 0.9rem; color: #6c757d; text-align: center;">
-                💡 Les recruteurs peuvent scanner ce code pour voir ton CV
-            </p>
-        </div>
-    `;
-    
-    openModal('QR Code CV', content);
-    
-    // Simuler la génération d'un QR code
-    setTimeout(() => {
-        const container = document.getElementById('qrcodeContainer');
-        if (container) {
-            container.innerHTML = `
-                <div style="font-size: 100px; color: #171718;">📱</div>
-                <p style="margin: 10px 0 0 0; color: #171718; font-weight: 600;">QR Code généré</p>
-                <small style="color: #6c757d;">CV: ${userCV.name}</small>
-            `;
-        }
-    }, 500);
-    
-    showNotification('✅ QR Code généré !');
+function shareCV() {
+    showNotification('🔗 Lien du CV copié !');
+    closeModal();
 }
 
 function openChat() {
@@ -2908,26 +2691,8 @@ function openChat() {
     closeModal();
 }
 
-// =============================================================================
-// GESTION DU BILAN PERSONNALISÉ
-// =============================================================================
-
 function downloadBilan() {
-    const bilanContent = generateBilanContent();
-    
-    // Créer un fichier PDF simulé (en texte)
-    const blob = new Blob([bilanContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Bilan_GameOfJobs_${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    showNotification('📊 Bilan personnalisé téléchargé !');
+    showNotification('📊 Bilan personnalisé téléchargé en PDF !');
 }
 
 function emailBilan() {
@@ -2935,30 +2700,9 @@ function emailBilan() {
         <h3 style="color: #2897d5; margin-bottom: 20px;">📧 Envoyer le Bilan par Email</h3>
         <form onsubmit="sendBilanEmail(event)" style="display: flex; flex-direction: column; gap: 15px;">
             <div>
-                <label for="bilanEmailAddress" style="display: block; margin-bottom: 5px; font-weight: 600;">Adresse email :</label>
-                <input type="email" id="bilanEmailAddress" required 
-                       style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;" 
-                       placeholder="ton.email@exemple.fr">
+                <label for="emailAddress" style="display: block; margin-bottom: 5px; font-weight: 600;">Adresse email :</label>
+                <input type="email" id="emailAddress" required style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;" placeholder="ton.email@exemple.fr">
             </div>
-            <div>
-                <label for="bilanCopyToSelf" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                    <input type="checkbox" id="bilanCopyToSelf" checked style="width: 18px; height: 18px;">
-                    <span>M'envoyer une copie</span>
-                </label>
-            </div>
-            <div>
-                <label for="bilanEmailMessage" style="display: block; margin-bottom: 5px; font-weight: 600;">Message personnalisé (optionnel) :</label>
-                <textarea id="bilanEmailMessage" rows="3" 
-                          style="width: 100%; padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem; resize: vertical;" 
-                          placeholder="Ajoute un message personnel..."></textarea>
-            </div>
-            
-            <!-- Aperçu du bilan -->
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; max-height: 200px; overflow-y: auto;">
-                <h4 style="margin: 0 0 10px 0; color: #171718;">📋 Aperçu du bilan :</h4>
-                <div style="font-size: 0.85rem; color: #6c757d; white-space: pre-line;">${generateBilanPreview()}</div>
-            </div>
-            
             <button type="submit" style="background: #2897d5; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600;">
                 📧 Envoyer le Bilan
             </button>
@@ -2970,250 +2714,11 @@ function emailBilan() {
 
 function sendBilanEmail(event) {
     event.preventDefault();
-    
-    const email = document.getElementById('bilanEmailAddress').value;
-    const message = document.getElementById('bilanEmailMessage').value;
-    const copyToSelf = document.getElementById('bilanCopyToSelf').checked;
-    
-    const bilanContent = generateBilanContent();
-    
-    // Créer un mailto avec le bilan
-    const subject = `Bilan Game of Jobs - ${new Date().toLocaleDateString('fr-FR')}`;
-    const body = `${message ? message + '\n\n' : ''}${bilanContent}`;
-    
-    const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    window.location.href = mailtoLink;
-    
+    const email = document.getElementById('emailAddress').value;
     closeModal();
     showNotification(`📧 Bilan envoyé à ${email} !`);
 }
 
-function generateBilanContent() {
-    const date = new Date().toLocaleDateString('fr-FR', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-    
-    const totalBadges = Object.values(userData.badges).filter(b => b).length;
-    
-    let content = `
-╔════════════════════════════════════════════════════════════╗
-║         🎮 GAME OF JOBS - BILAN PERSONNALISÉ              ║
-║              Forum de l'Emploi                             ║
-╚════════════════════════════════════════════════════════════╝
-
-📅 Date : ${date}
-
-╔════════════════════════════════════════════════════════════╗
-║                    📊 VOS RÉSULTATS                        ║
-╚════════════════════════════════════════════════════════════╝
-
-🏆 Score Total : ${userData.score} points
-📈 Progression : ${Math.round((userData.score / 1000) * 100)}%
-
-╔════════════════════════════════════════════════════════════╗
-║                  📈 STATISTIQUES DÉTAILLÉES                ║
-╚════════════════════════════════════════════════════════════╝
-
-🏢 Secteurs explorés : ${userData.visitedSectors.length}
-💬 Questions posées : ${userData.questionsAsked}
-📄 CV déposés : ${userData.cvsDeposited}
-📞 Contacts obtenus : ${userData.contactsObtained}
-👟 Nombre de pas : ${userData.stepsCount}
-
-╔════════════════════════════════════════════════════════════╗
-║                    🏅 BADGES OBTENUS                       ║
-╚════════════════════════════════════════════════════════════╝
-
-Total : ${totalBadges}/5 badges débloqués
-
-${userData.badges.explorer ? '✅' : '❌'} Explorateur - 3 secteurs visités
-${userData.badges.communicator ? '✅' : '❌'} Communicateur - 5 questions posées
-${userData.badges.candidate ? '✅' : '❌'} Candidat Pro - 3 CV déposés
-${userData.badges.hunter ? '✅' : '❌'} Job Hunter - Contact obtenu
-${userData.badges.ecoWarrior ? '✅' : '❌'} Eco Warrior - 5000 pas complétés
-
-╔════════════════════════════════════════════════════════════╗
-║                  📋 ENTREPRISES CONTACTÉES                 ║
-╚════════════════════════════════════════════════════════════╝
-
-Total : ${userData.companyTracker.length} entreprise(s)
-
-`;
-
-    userData.companyTracker.forEach((company, index) => {
-        content += `
-${index + 1}. ${company.name} (${company.sector})
-   ${company.presentation ? '✅' : '❌'} Présentation
-   ${company.question ? '✅' : '❌'} Question posée
-   ${company.cv ? '✅' : '❌'} CV déposé
-   ${company.suivi ? '✅' : '❌'} Suivi obtenu
-   ${company.ressenti ? 'Ressenti : ' + company.ressenti : ''}
-   ${company.comment ? 'Note : ' + company.comment : ''}
-`;
-    });
-
-    content += `
-╔════════════════════════════════════════════════════════════╗
-║                   🎯 OBJECTIFS COMPLÉTÉS                   ║
-╚════════════════════════════════════════════════════════════╝
-
-${userData.completedObjectives.includes('presence') ? '✅' : '❌'} Feuille de présence signée
-${userData.completedObjectives.includes('secteurs') ? '✅' : '❌'} 3 secteurs ciblés
-${userData.completedObjectives.includes('debrief') ? '✅' : '❌'} Débrief retour QG
-${userData.completedObjectives.includes('partenaire') ? '✅' : '❌'} Visite partenaire ML
-
-╔════════════════════════════════════════════════════════════╗
-║               🚀 RECOMMANDATIONS PERSONNALISÉES            ║
-╚════════════════════════════════════════════════════════════╝
-
-`;
-
-    // Recommandations personnalisées
-    if (userData.visitedSectors.length < 3) {
-        content += `📌 Continue d'explorer les secteurs (${3 - userData.visitedSectors.length} restant(s))\n`;
-    }
-    if (userData.questionsAsked < 5) {
-        content += `📌 N'hésite pas à poser plus de questions aux recruteurs\n`;
-    }
-    if (userData.cvsDeposited < 3) {
-        content += `📌 Dépose ton CV dans d'autres entreprises\n`;
-    }
-    if (userData.contactsObtained === 0) {
-        content += `📌 Demande des contacts pour le suivi de tes candidatures\n`;
-    }
-
-    content += `
-╔════════════════════════════════════════════════════════════╗
-║                      📞 CONTACT                            ║
-╚════════════════════════════════════════════════════════════╝
-
-Mission Locale - Réseau des Missions Locales
-Forum de l'Emploi
-
-🌐 Pour plus d'informations, contacte ta Mission Locale
-
-════════════════════════════════════════════════════════════
-
-Document généré le ${new Date().toLocaleString('fr-FR')}
-Game of Jobs © ${new Date().getFullYear()} - Mission Locale
-`;
-
-    return content;
-}
-
-function generateBilanPreview() {
-    return `Score: ${userData.score} points
-Secteurs: ${userData.visitedSectors.length}
-Questions: ${userData.questionsAsked}
-CV déposés: ${userData.cvsDeposited}
-Badges: ${Object.values(userData.badges).filter(b => b).length}/5`;
-}
-
-function saveResults() {
-    const content = `
-        <h3 style="color: #f39200; margin-bottom: 20px;">💾 Sauvegarder Mon Résultat</h3>
-        <p style="margin-bottom: 20px;">Choisis comment tu veux sauvegarder ton parcours au forum emploi :</p>
-        
-        <div style="display: flex; flex-direction: column; gap: 15px;">
-            <button onclick="downloadBilanPDF()" style="background: #2897d5; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 10px; justify-content: center;">
-                <span style="font-size: 1.2rem;">📊</span>
-                Télécharger le Rapport Complet (TXT)
-            </button>
-            
-            <button onclick="exportToJSON()" style="background: #95c11f; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 10px; justify-content: center;">
-                <span style="font-size: 1.2rem;">📋</span>
-                Exporter les Données (JSON)
-            </button>
-            
-            <button onclick="emailBilan()" style="background: #f39200; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 10px; justify-content: center;">
-                <span style="font-size: 1.2rem;">📧</span>
-                Envoyer par Email
-            </button>
-            
-            <button onclick="printBilan()" style="background: #a3195b; color: white; border: none; padding: 15px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 10px; justify-content: center;">
-                <span style="font-size: 1.2rem;">🖨️</span>
-                Imprimer le Bilan
-            </button>
-        </div>
-        
-        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-top: 20px;">
-            <h4 style="color: #171718; margin: 0 0 10px 0;">📋 Contenu sauvegardé :</h4>
-            <ul style="margin: 0; padding-left: 20px; color: #6c757d; font-size: 0.9rem;">
-                <li>Score final : ${userData.score} points</li>
-                <li>Badges obtenus : ${Object.values(userData.badges).filter(b => b).length}/5</li>
-                <li>Secteurs visités : ${userData.visitedSectors.length}</li>
-                <li>Entreprises contactées : ${userData.companyTracker.length}</li>
-                <li>Carnet de bord complet</li>
-                <li>Recommandations personnalisées</li>
-            </ul>
-        </div>
-    `;
-    
-    openModal('Sauvegarder Résultats', content);
-}
-
-function downloadBilanPDF() {
-    downloadBilan();
-    closeModal();
-}
-
-function exportToJSON() {
-    const data = {
-        userData: userData,
-        exportDate: new Date().toISOString(),
-        version: '1.0'
-    };
-    
-    const dataStr = JSON.stringify(data, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `GameOfJobs_Data_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    showNotification('📋 Données exportées en JSON !');
-    closeModal();
-}
-
-function printBilan() {
-    const bilanContent = generateBilanContent();
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <html>
-        <head>
-            <title>Bilan Game of Jobs</title>
-            <style>
-                body {
-                    font-family: 'Courier New', monospace;
-                    padding: 20px;
-                    line-height: 1.6;
-                }
-                pre {
-                    white-space: pre-wrap;
-                    word-wrap: break-word;
-                }
-            </style>
-        </head>
-        <body>
-            <pre>${bilanContent}</pre>
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
-    
-    showNotification('🖨️ Préparation de l\'impression...');
-    closeModal();
-}
 function saveResults() {
     const content = `
         <h3 style="color: #f39200; margin-bottom: 20px;">💾 Sauvegarder Mon Résultat</h3>
@@ -3511,7 +3016,3 @@ console.log('  - window.gameOfJobs.resetAllData() : Réinitialiser tout');
 </body>
 </html>
 
-
-</script>
-</body>
-</html>
