@@ -1287,8 +1287,23 @@ function loadUserData() {
         const saved = localStorage.getItem('gameOfJobsUserData');
         if (saved) {
             userData = JSON.parse(saved);
+            // Charger le CV s'il existe
+            if (userData.cv) {
+                userCV = userData.cv;
+            }
             console.log('Données chargées avec succès');
         }
+    } catch (e) {
+        console.error('Erreur lors du chargement:', e);
+    }
+}
+            }
+            console.log('Données chargées avec succès');
+        }
+    } catch (e) {
+        console.error('Erreur lors du chargement:', e);
+    }
+}
     } catch (e) {
         console.error('Erreur lors du chargement:', e);
     }
